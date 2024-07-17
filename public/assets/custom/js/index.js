@@ -1,5 +1,6 @@
 const chatbotConversation = document.getElementById('chatbot-conversation')
 const context = []
+const mode = 'question'
 
 document.addEventListener('submit', (e) => {
     e.preventDefault()
@@ -38,7 +39,7 @@ document.addEventListener('submit', (e) => {
         response.json().then(data => {
             //lấy được thông tin xong mới push question vào context
             context.push(question)
-            console.log(data)
+            console.log(context)
             document.getElementById('pending').remove()
             let answer = document.createElement('div')
             answer.classList.add('speech', 'speech-ai')
