@@ -14,7 +14,10 @@
         "ext-intl": "*",
         "ext-mbstring": "*",
         "laminas/laminas-escaper": "^2.13",
-        "psr/log": "^3.0"
+        "nyholm/psr7": "^1.8",
+        "openai-php/client": "^0.10.1",
+        "psr/log": "^3.0",
+        "symfony/http-client": "^7.1"
     },
     "require-dev": {
         "codeigniter/coding-standard": "^1.7",
@@ -58,7 +61,10 @@
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true
+        }
     },
     "scripts": {
         "test": "phpunit"
