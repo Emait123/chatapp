@@ -1,20 +1,28 @@
 const chatbotConversation = document.getElementById('chatbot-conversation')
+const context = []
 
 document.addEventListener('submit', (e) => {
     e.preventDefault()
     const userInput = document.getElementById('user-input')
+    let question = userInput.value
     const newSpeechBubble = document.createElement('div')
     newSpeechBubble.classList.add('speech', 'speech-human')
     chatbotConversation.appendChild(newSpeechBubble)
     newSpeechBubble.textContent = userInput.value
     userInput.value = ''
-    chatbotConversation.scrollTop = chatbotConversation.scrollHeight
 
+    let pending = document.createElement('div')
+    pending.classList.add('speech', 'speech-ai')
+    pending.setAttribute('id', 'pending')
+    pending.innerHTML = '<div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>'
+    chatbotConversation.appendChild(pending)
+    chatbotConversation.scrollTop = chatbotConversation.scrollHeight
+    
+    //Gửi request đến server để lấy thông tin
     let formData = new FormData();
     formData.append('action', 'user-input');
-    formData.append('question', userInput.value);
-
-    //Gửi request đến server để lấy thông tin
+    formData.append('question', question);
+    formData.append('context', context);
     fetch('home/api', {
         method: 'POST',
         mode: 'no-cors',
@@ -28,7 +36,16 @@ document.addEventListener('submit', (e) => {
         }
         // parse response data
         response.json().then(data => {
+            //lấy được thông tin xong mới push question vào context
+            context.push(question)
             console.log(data)
+            document.getElementById('pending').remove()
+            let answer = document.createElement('div')
+            answer.classList.add('speech', 'speech-ai')
+            answer.textContent = data['content']
+            chatbotConversation.appendChild(answer)
+            chatbotConversation.scrollTop = chatbotConversation.scrollHeight
+            // context.push('assistant', data['content'])
             return;
         })
         }

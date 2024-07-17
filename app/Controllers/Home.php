@@ -6,20 +6,7 @@ use \OpenAI;
 
 class Home extends BaseController
 {
-    public function index()
-    {
-        // $yourApiKey = getenv('OPENAI_API_KEY');
-        // $client = OpenAI::client($yourApiKey);
-
-        // $result = $client->chat()->create([
-        //     'model' => 'gpt-3.5-turbo',
-        //     'messages' => [
-        //         ['role' => 'user', 'content' => 'Hello!'],
-        //     ],
-        // ]);
-
-        // echo $result->choices[0]->message->content; // Hello! How can I assist you today?
-        
+    public function index() {     
         return view('index');
     }
 
@@ -30,22 +17,25 @@ class Home extends BaseController
         }
 
         $post = $this->request->getPost();
-        return match ($action) {
-            'user-input' => $this->ask($post['question']),
+        $response =  match ($action) {
+            'user-input' => $this->ask($post['question'], $post['context']),
         };
+
+        return $this->response->setJSON($response);
     }
 
-    private function ask($question) {
+    private function ask($question, $context) {
         $yourApiKey = getenv('OPENAI_API_KEY');
         $client = OpenAI::client($yourApiKey);
 
         $result = $client->chat()->create([
             'model' => 'gpt-3.5-turbo',
             'messages' => [
+                ['role' => 'system', 'content' => "You're a helpful assistant. The user's previous messages are: {$context}" ],
                 ['role' => 'user', 'content' => $question],
             ],
         ]);
 
-        return $result->choices[0]->message->content;
+        return $result->choices[0]->message;
     }
 }
