@@ -37,20 +37,41 @@ class Home extends BaseController
                 'type' => 'function',
                 'function' => [
                     'name'  => 'get_timeoff_detail',
-                    'description' => "extract detail from a Vietnamese request for time off. Also take information from previous context",
+                    'description' => "extract detail from a Vietnamese request for time off.",
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
                             'time' => [
                                 'type' => 'string',
-                                'description' => "The requested time off period, in 'DD/MM/YYYY' format if possible"
+                                'description' => "The requested time off period, in 'DD/MM/YYYY' format if possible. If it's a date range, return date start and date end in 'DD/MM/YYYY' format if possible."
                             ],
                             'reason' => [
                                 'type' => 'string',
-                                'description' => "The reason for time off, e.g. bị ốm. Return 'không rõ' is not found."
+                                'description' => "The reason for time off, e.g. bị ốm."
                             ]
                         ],
-                        'required' => ['time']
+                        'required' => []
+                    ]
+                ]
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name'  => 'confirmation_context',
+                    'description' => "check if user has confirmed their intention and get the confirmation context. Context is taken from previous messages",
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'confirmation' => [
+                                'type' => 'boolean',
+                                'description' => "Return true if user agree, false if user disagree or can't determine"
+                            ],
+                            'context' => [
+                                'type' => 'string',
+                                'description' => "The context the user agree or disagree on, regarding timeoff request. Choose from: register, update, cancel, unknown"
+                            ]
+                        ],
+                        'required' => ['confirmation', 'context']
                     ]
                 ]
             ]
@@ -60,10 +81,13 @@ class Home extends BaseController
         try {
             $yourApiKey = getenv('OPENAI_API_KEY');
             $client = OpenAI::client($yourApiKey);
-            $result = $client->chat()->create([
+
+            //Tạo stream để nhận token ngay, tránh lỗi timeout
+            $res = '';
+            $stream = $client->chat()->createStreamed([
                 'model' => 'gpt-3.5-turbo',
                 'messages' => [
-                    ['role' => 'system', 'content' => "You're a helpful assistant, if the user want to request for timeoff, call get_timeoff_detail function, take in user's previous messages as well. Today is {$today}. User's previous messages are: {$context}. Reply in Vietnamese." ],
+                    ['role' => 'system', 'content' => "You're a helpful assistant. Today is {$today}. User's previous messages are: {$context}. Reply in Vietnamese. If the prompt is a request for timeoff, call get_timeoff_detail function" ],
                     ['role' => 'user', 'content' => $question],
                 ],
                 'tools' => $tools,
@@ -71,29 +95,90 @@ class Home extends BaseController
                 'max_tokens' => 400,
                 
             ]);
+
+            $params = '';
+            $text = '';
+            $function_name = '';
+            foreach ($stream as $s) {
+                $array = $s->choices[0]->toArray();
+                $delta = $array['delta'];
+
+                //Khi chạy đến token cuối thì delta sẽ rỗng
+                if (empty($delta)) {
+                    break;
+                }
+
+                if (!empty($delta['tool_calls'])) {
+                    $function = $delta['tool_calls'][0]['function'];
+                    if (isset($function['name'])) {
+                        $function_name = $function['name'];
+                    }
+                    $params .= $function['arguments'];
+                } else {
+                    if (!isset($delta['role']) && isset($delta['content'])) {
+                        $text .= $delta['content'];
+                    }
+                }
+            }
+            
+            if ($params != '') {
+                $param = json_decode($params, true);
+                $response =  match ($function_name) {
+                    'get_timeoff_detail' => $this->get_timeoff_detail($param),
+                    default => [
+                        'type' => 'response',
+                        'content' => 'abc'
+                    ]
+                };
+                return $response;
+            } else {
+                $content = [
+                    'type' => 'response',
+                    'content' => $text
+                ];
+                return $content;
+            }
         } catch (Exception $e) {
+            log_message('error', "Lỗi: {$e->getMessage()}");
             $content = [
                 'type' => 'error',
                 'content' => "Có lỗi xảy ra trong khi xử lý yêu cầu của bạn. Vui lòng thử lại sau."
             ];
             return $content;
         }
+    }
 
+    private function get_timeoff_detail($params) {
+        $timeoff = $this->session->get('timeoff');
+        $context = $this->session->get('context');
 
-        $response = $result->choices[0]->message;
-        if (!empty($response->toolCalls)) {
-            $args = $response->toolCalls[0]->function->arguments;
-            $result = json_decode($args, true);
-            if (!isset($result['reason'])) {
-                $result['reason'] = 'Chưa rõ';
-            }
-            $content = [
-                'type' => 'timeoff',
-                'content' => "Bạn đã xin nghỉ vào ngày: {$result['time']} với lý do: {$result['reason']}"
+        //Nếu là yêu cầu xin nghỉ mới
+        if (!isset($timeoff)) {
+            $params['time']     = (!isset($params['time'])) ? 'Chưa rõ' : $params['time'];
+            $params['reason']   = (!isset($params['reason'])) ? 'Chưa rõ' : $params['reason'];
+            $timeoff = [
+                'time'  => $params['time'],
+                'reason'  => $params['reason'],
             ];
-            return $content;
-        } else {
-            return $response;
+            $context = 'register';
+        } else { //Nếu trong session đã có yêu cầu xin nghỉ
+            //Nếu có thông tin mới thì update, nếu không thì giữ nguyên
+            $timeoff['time'] = (isset($params['time'])) ? $params['time'] : $timeoff['time'];
+            $timeoff['reason'] = (isset($params['reason'])) ? $params['reason'] : $timeoff['reason'];
+            $context = 'update';
         }
+
+        $this->session->set('timeoff', $timeoff);
+        $this->session->set('context', $context);
+
+        $content = [
+            'type' => 'timeoff',
+            'content' => "Bạn đã xin nghỉ vào ngày: {$timeoff['time']} với lý do: {$timeoff['reason']}. Thông tin này đã chính xác chưa?"
+        ];
+        return $content;
+    }
+
+    private function confirmation_context() {
+        
     }
 }

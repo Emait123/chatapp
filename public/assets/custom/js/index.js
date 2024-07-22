@@ -47,6 +47,7 @@ document.addEventListener('submit', (e) => {
             chatbotConversation.appendChild(answer)
             chatbotConversation.scrollTop = chatbotConversation.scrollHeight
             // context.push('assistant', data['content'])
+            context.push(data['content'])
             return;
         })
         }

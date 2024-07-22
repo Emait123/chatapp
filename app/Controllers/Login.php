@@ -12,7 +12,7 @@ class Login extends BaseController
         $post = $this->request->getPost();
         $username = $post['username'];
         $password = $post['password'];
-        if ($username == 'user' && $password == '123') {
+        if ($username == 'user' && $password == 'mhn') {
             $this->session->set('user', $username);
             return redirect()->route('Home::index');
         } else {
