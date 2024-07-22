@@ -26,8 +26,8 @@ main {
 
 .chatbot-container {
     background-color: #16202C;
-    width: 360px;
-    min-height: 380px;
+    /* width: 360px;
+    min-height: 380px; */
     border-radius: var(--border-rad-lg);
     display: flex;
     flex-direction: column;
@@ -61,8 +61,8 @@ main {
 }
 
 .chatbot-conversation-container {
-    max-height: 250px;
-    min-height: 250px;
+    /* max-height: 250px;
+    min-height: 250px; */
     overflow-y: scroll;
     margin: 1em 0;
 }
