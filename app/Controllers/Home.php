@@ -31,13 +31,14 @@ class Home extends BaseController
     }
 
     private function ask($question, $context) {
+        $weekday = date('l');
         $today = date('d/m/Y');
         $tools = [
             [
                 'type' => 'function',
                 'function' => [
                     'name'  => 'get_timeoff_detail',
-                    'description' => "extract detail from a Vietnamese request for time off.",
+                    'description' => "extract detail from a Vietnamese request for time off. Today is {$weekday}, {$today}. Ngày kia means two days from today, Tuần sau means the next week.",
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
@@ -50,7 +51,7 @@ class Home extends BaseController
                                 'description' => "The reason for time off, e.g. bị ốm."
                             ]
                         ],
-                        'required' => []
+                        'required' => ['time']
                     ]
                 ]
             ],
@@ -87,12 +88,12 @@ class Home extends BaseController
             $stream = $client->chat()->createStreamed([
                 'model' => 'gpt-3.5-turbo',
                 'messages' => [
-                    ['role' => 'system', 'content' => "You're a helpful assistant. Today is {$today}. User's previous messages are: {$context}. Reply in Vietnamese. If the prompt is a request for timeoff, call get_timeoff_detail function" ],
+                    ['role' => 'system', 'content' => "You're a helpful assistant, able to process Vietnamese sentences. User's previous messages are: {$context}. Reply in Vietnamese." ],
                     ['role' => 'user', 'content' => $question],
                 ],
                 'tools' => $tools,
                 'temperature' => 0.1,
-                'max_tokens' => 400,
+                // 'max_tokens' => 400,
                 
             ]);
 
@@ -121,6 +122,7 @@ class Home extends BaseController
                 }
             }
             
+            //Nếu GPT gọi function
             if ($params != '') {
                 $param = json_decode($params, true);
                 $response =  match ($function_name) {
@@ -131,7 +133,7 @@ class Home extends BaseController
                     ]
                 };
                 return $response;
-            } else {
+            } else { //Nếu GPT gửi câu trả lời bình thường
                 $content = [
                     'type' => 'response',
                     'content' => $text
