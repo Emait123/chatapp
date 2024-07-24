@@ -5,8 +5,8 @@ const mode = 'question'
 document.addEventListener('submit', (e) => {
     e.preventDefault()
 
-    if (context.length >= 10) {
-        alert('Số lượng câu hỏi-đáp đã quá 5 câu. Tải lại trang để reset lại thông tin');
+    if (context.length >= 16) {
+        alert('Số lượng câu hỏi-đáp đã quá 8 câu. Tải lại trang để reset lại thông tin');
         return;
     }
     
