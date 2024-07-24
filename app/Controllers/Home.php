@@ -33,18 +33,23 @@ class Home extends BaseController
     private function ask($question, $context) {
         $weekday = date('l');
         $today = date('d/m/Y');
+        $tomorrow = date("d/m/Y", strtotime("+1 day"));
+        $tomorrow_date = date("l", strtotime("+1 day"));
+        $ngaykia = date("d/m/Y", strtotime("+2 day"));
+        $ngaykia_date = date("l", strtotime("+2 day"));
         $tools = [
             [
                 'type' => 'function',
                 'function' => [
                     'name'  => 'get_timeoff_detail',
-                    'description' => "extract detail from a Vietnamese request for time off. Today is {$weekday}, {$today}. Ngày kia means two days from today, Tuần sau means the next week.",
+                    'description' => "extract detail from a Vietnamese request for time off. Reference these dates: Today is {$weekday}, {$today}; Tomorrow is {$tomorrow_date}, {$tomorrow}; 'Ngày kia' is {$ngaykia_date}, {$ngaykia}, Tuần sau means the next week.",
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
                             'time' => [
                                 'type' => 'string',
-                                'description' => "The requested time off period, in 'DD/MM/YYYY' format if possible. If it's a date range, return date start and date end in 'DD/MM/YYYY' format if possible."
+                                'description' => "The requested time off period, Absolute or relative date-time in a format parseable by the Python dateparser package."
+                                // 'description' => "The requested time off period, in 'DD/MM/YYYY' format if possible. If it's a date range, return date start and date end in 'DD/MM/YYYY' format if possible."
                             ],
                             'reason' => [
                                 'type' => 'string',
