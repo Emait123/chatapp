@@ -10,9 +10,9 @@
             </div>
         </div>
         <div class="navbar-nav w-100">
-            <a href="#" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i> Trang chủ</a>
+            <a href="<?= url_to('chat') ?>" class="nav-item nav-link"><i class="fa fa-tachometer-alt me-2"></i> Trang chủ</a>
             <a href="<?= url_to('chat') ?>" class="nav-item nav-link"><i class="fa-solid fa-comments"></i> Chat</a>
-            <a href="timeoff" class="nav-item nav-link "><i class="fa-solid fa-calendar-days"></i> Thông tin nghỉ phép</a>
+            <a href="<?= url_to('timeofflist') ?>" class="nav-item nav-link "><i class="fa-solid fa-calendar-days"></i> Thông tin nghỉ phép</a>
         </div>
         <div class="navbar-nav align-self-end w-100">
             <hr/>

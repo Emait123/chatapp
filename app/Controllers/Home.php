@@ -8,6 +8,7 @@ use \OpenAI;
 class Home extends BaseController
 {
     public function index() {
+        $this->session->remove('timeoff');
         $user = $this->session->get('user');
         if (!isset($user)) {
             return redirect()->route('Login::index');
@@ -18,8 +19,6 @@ class Home extends BaseController
         ];
 
         $data['user'] = $user;
-
-        // return view('index');
         return view('chat', $data);
     }
 
@@ -32,9 +31,26 @@ class Home extends BaseController
         $post = $this->request->getPost();
         $response =  match ($action) {
             'user-input' => $this->ask($post['question'], $post['context']),
+            'confirm-timeoff' => $this->registerTimeoff($post),
+            'clear-session' => $this->clearSession(),
         };
 
         return $this->response->setJSON($response);
+    }
+
+    private function registerTimeoff($params) {
+        if (!isset($params['confirm'])) {
+            return;
+        }
+
+        $timeoff = $this->session->get('timeoff');
+
+        return ['result' => true];
+    }
+
+    private function clearSession() {
+        $this->session->remove('timeoff');
+        return ['result' => true];
     }
 
     private function ask($question, $context) {
@@ -60,8 +76,11 @@ class Home extends BaseController
                         'properties' => [
                             'date' => [
                                 'type' => 'string',
-                                // 'description' => "The requested time off period, Absolute or relative date-time in a format parseable by the Python dateparser package."
-                                'description' => "The requested timeoff date, in 'DD/MM/YYYY' format if possible. If it's a date range, return date start and date end in 'DD/MM/YYYY' format if possible. Return '' if not found."
+                                'description' => "The start date for timeoff request, in 'DD/MM/YYYY' format or any format parsable by PHP's strtotime() function. Return '' if not found."
+                            ],
+                            'enddate' => [
+                                'type' => 'string',
+                                'description' => "The end date for timeoff request, in 'DD/MM/YYYY' format or any format parsable by PHP's strtotime() function."
                             ],
                             'time' => [
                                 'type' => 'string',
@@ -76,24 +95,24 @@ class Home extends BaseController
                     ]
                 ]
             ],
-            [
-                'type' => 'function',
-                'function' => [
-                    'name'  => 'get_intention',
-                    'description' => "check if user has agreed to the timeoff request's detail. Context is taken from previous messages.",
-                    'parameters' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'agree' => [
-                                'type' => 'boolean',
-                                'description' => "The user's intention. True if they agree, false is they disagree or can't determine user's intention."
-                            ]
-                        ],
-                        'required' => ['agree']
-                    ]
-                ]
-            ]
         ];
+        // [
+        //     'type' => 'function',
+        //     'function' => [
+        //         'name'  => 'get_intention',
+        //         'description' => "check if user has agreed to the timeoff request's detail. Context is taken from previous messages.",
+        //         'parameters' => [
+        //             'type' => 'object',
+        //             'properties' => [
+        //                 'agree' => [
+        //                     'type' => 'boolean',
+        //                     'description' => "The user's intention. True if they agree, false is they disagree or can't determine user's intention."
+        //                 ]
+        //             ],
+        //             'required' => ['agree']
+        //         ]
+        //     ]
+        // ]
 
         //Gửi câu hỏi đến GPT
         try {
@@ -153,6 +172,7 @@ class Home extends BaseController
                 }
                 $param = array_merge(...$json_array);
 
+                //Chạy function
                 foreach ($function_list as $function) {
                     match($function) {
                         'get_timeoff_detail' => $this->get_timeoff_detail($param),
@@ -161,26 +181,32 @@ class Home extends BaseController
                     };
                 }
 
+                //Lấy kết quả và trả lại response
                 $timeoff = $this->session->get('timeoff');
-                $confirm = $this->session->get('confirm');
                 if (isset($timeoff)) {
-                    if (isset($confirm) && $confirm == true) {
+                    if ($timeoff['date'] == '' || $timeoff['reason'] == '') {
                         $response = [
-                            'type' => 'confirm',
-                            'content' => "Bạn đã xin nghỉ vào ngày: {$timeoff['date']} {$timeoff['time']} với lý do: {$timeoff['reason']}. Thông tin đã được ghi nhận."
+                            'type' => 'incomplete',
+                            'date' => $timeoff['date'],
+                            'enddate' => $timeoff['enddate'],
+                            'time' => $timeoff['time'],
+                            'reason' => $timeoff['reason'],
                         ];
-                    } else {                        
+                    } else {
                         $response = [
                             'type' => 'check',
-                            'content' => "Bạn đã xin nghỉ vào ngày: {$timeoff['date']} {$timeoff['time']} với lý do: {$timeoff['reason']}. Thông tin này đã chính xác chưa?"
+                            'date' => $timeoff['date'],
+                            'enddate' => $timeoff['enddate'],
+                            'time' => $timeoff['time'],
+                            'reason' => $timeoff['reason'],
                         ];
                     }
                 } else {
                     $response = [
-                        'type' => 'timeoff',
+                        'type' => 'chat',
                         'content' => "Xin mời cung cấp thông tin để xin nghỉ."
                     ];
-                } 
+                }
                 return $response;
             } else { //Nếu GPT gửi câu trả lời bình thường
                 $content = [
@@ -203,11 +229,15 @@ class Home extends BaseController
         $timeoff = $this->session->get('timeoff');
         // $context = $this->session->get('context');
 
-        //Nếu là yêu cầu xin nghỉ mới
+        //Nếu là yêu cầu xin nghỉ mới.
         if (!isset($timeoff)) {
-            $params['date']     = (!isset($params['date']) || $params['date'] == '') ? 'Chưa rõ' : $params['date'];
+            $params['date']     = (!isset($params['date'])) ? '' : $params['date'];
+            $params['enddate']     = (!isset($params['enddate'])) ? '' : $params['enddate'];
             $params['time']     = (!isset($params['time'])) ? '' : $params['time'];
-            $params['reason']   = (!isset($params['reason']) || $params['reason'] == '') ? 'Chưa rõ' : $params['reason'];
+            $params['reason']   = (!isset($params['reason'])) ? '' : $params['reason'];
+            // $params['date']     = (!isset($params['date']) || $params['date'] == '') ? 'Chưa rõ' : $params['date'];
+            // $params['time']     = (!isset($params['time'])) ? '' : $params['time'];
+            // $params['reason']   = (!isset($params['reason']) || $params['reason'] == '') ? 'Chưa rõ' : $params['reason'];
             $timeoff = [
                 'date'  => $params['date'],
                 'reason'  => $params['reason'],
@@ -216,6 +246,7 @@ class Home extends BaseController
         } else {
             //Nếu có thông tin mới thì update, nếu không thì giữ nguyên
             $timeoff['date']    = (isset($params['date']) && $params['date'] != '') ? $params['date'] : $timeoff['date'];
+            $timeoff['enddate']    = (isset($params['enddate']) && $params['enddate'] != '') ? $params['enddate'] : $timeoff['enddate'];
             $timeoff['time']    = (isset($params['time']) && $params['time'] != '') ? $params['time'] : $timeoff['time'];
             $timeoff['reason']  = (isset($params['reason']) && $params['reason'] != '') ? $params['reason'] : $timeoff['reason'];
         }

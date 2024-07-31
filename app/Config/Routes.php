@@ -9,4 +9,5 @@ $routes->get('/', 'Home::index', ['as' => 'chat']);
 $routes->get('/login', 'Login::index', ['as' => 'login']);
 $routes->post('/login', 'Login::login');
 $routes->get('/logout', 'Login::logout', ['as' => 'logout']);
+$routes->get('/timeoff', 'TimeoffList::index', ['as' => 'timeofflist']);
 $routes->post('/home/api', 'Home::fetch');

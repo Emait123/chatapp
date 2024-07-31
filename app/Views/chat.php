@@ -18,7 +18,7 @@
                     <div class="speech speech-ai">Tôi có thể giúp gì bạn?</div>
                 </div>
                 <form id="form" class="chatbot-input-container">
-                    <button type="button" title="Xóa cuộc trò chuyện">
+                    <button type="button" id='clear-session' title="Xóa cuộc trò chuyện">
                         <i class="fa-solid fa-eraser" style="color: #ffffff;"></i>
                     </button>
                     <input name="user-input" type="text" id="user-input" required>
