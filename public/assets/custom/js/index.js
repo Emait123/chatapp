@@ -38,24 +38,32 @@ document.addEventListener('submit', (e) => {
     })
     .then(
         (response) => {
-        if (response.status !== 200) {
-            return console.log('Lỗi, mã lỗi ' + response.status);
-        }
-        // parse response data
-        response.json().then(data => {
-            //lấy được thông tin xong mới push question vào context
-            context.push(question)
-            console.log(context)
-            document.getElementById('pending').remove()
-            let answer = document.createElement('div')
-            answer.classList.add('speech', 'speech-ai')
-            answer.textContent = data['content']
-            chatbotConversation.appendChild(answer)
-            chatbotConversation.scrollTop = chatbotConversation.scrollHeight
-            // context.push('assistant', data['content'])
-            context.push(data['content'])
-            return;
-        })
+            if (response.status !== 200) {
+                return console.log('Lỗi, mã lỗi ' + response.status);
+            }
+            // parse response data
+            response.json().then(data => {
+                //lấy được thông tin xong mới push question vào context
+                context.push("user:" + question)
+                console.log(context)
+                document.getElementById('pending').remove()
+
+                let answer = document.createElement('div')
+                answer.classList.add('speech', 'speech-ai')
+                answer.textContent = data['content']
+                chatbotConversation.appendChild(answer)
+                if (data['type'] == 'check') {
+                    let check = document.createElement('div')
+                    check.classList.add('speech', 'speech-ai', 'd-flex')
+                    check.setAttribute('id', 'check')
+                    check.innerHTML = "<button type='button' class='btn btn-success confirm-check' title='Đồng ý' data-check='1'><i class='fa-solid fa-check'></i></button><button type='button' class='btn btn-danger confirm-check' title='Không đồng ý' data-check='0'><i class='fa-solid fa-x'></i></button>"
+                    chatbotConversation.appendChild(check)
+                }
+
+                chatbotConversation.scrollTop = chatbotConversation.scrollHeight
+                context.push("assistant:" + data['content'])
+                return;
+            })
         }
     )
     .catch(err => {
@@ -63,18 +71,9 @@ document.addEventListener('submit', (e) => {
     });
 })
 
-function renderTypewriterText(text) {
-    const newSpeechBubble = document.createElement('div')
-    newSpeechBubble.classList.add('speech', 'speech-ai', 'blinking-cursor')
-    chatbotConversation.appendChild(newSpeechBubble)
-    let i = 0
-    const interval = setInterval(() => {
-        newSpeechBubble.textContent += text.slice(i-1, i)
-        if (text.length === i) {
-            clearInterval(interval)
-            newSpeechBubble.classList.remove('blinking-cursor')
-        }
-        i++
-        chatbotConversation.scrollTop = chatbotConversation.scrollHeight
-    }, 50)
-}
+document.querySelectorAll('.btn-check').forEach((el) => {
+    el.addEventListener('click', () => {
+        let result = el.dataset.check
+        console.log(result)
+    });
+});

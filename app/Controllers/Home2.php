@@ -16,10 +16,7 @@ class Home extends BaseController
             'name'  => 'user',
             'role_name' => 'Nhân viên'
         ];
-
         $data['user'] = $user;
-
-        // return view('index');
         return view('chat', $data);
     }
 
@@ -38,7 +35,7 @@ class Home extends BaseController
     }
 
     private function ask($question, $context) {
-        $today_date = date('l');
+        $weekday = date('l');
         $today = date('h:i a d/m/Y');
         $tomorrow = date("d/m/Y", strtotime("+1 day"));
         $tomorrow_date = date("l", strtotime("+1 day"));
@@ -51,7 +48,7 @@ class Home extends BaseController
                 'function' => [
                     'name'  => 'get_timeoff_detail',
                     'description' => "extract detail from a Vietnamese request for time off. Reference these dates: 
-                                        1.Today: {$today_date}, {$today}; 
+                                        1.Today: {$weekday}, {$today}; 
                                         2.Tomorrow: {$tomorrow_date}, {$tomorrow};
                                         3.'Ngày kia': {$ngaykia_date}, {$ngaykia};
                                         4.'Tuần sau' means the next week, starts at {$next_monday}.",
@@ -60,12 +57,15 @@ class Home extends BaseController
                         'properties' => [
                             'date' => [
                                 'type' => 'string',
-                                // 'description' => "The requested time off period, Absolute or relative date-time in a format parseable by the Python dateparser package."
-                                'description' => "The requested timeoff date, in 'DD/MM/YYYY' format if possible. If it's a date range, return date start and date end in 'DD/MM/YYYY' format if possible. Return '' if not found."
+                                'description' => "The requested timeoff date, in 'DD/MM/YYYY' format if possible. If it's a date range, return date start and date end in 'DD/MM/YYYY' format. Return '' if not found."
                             ],
                             'time' => [
                                 'type' => 'string',
-                                'description' => "The time of day requested. Return '' if not found, else return 'AM' or 'PM'."
+                                'description' => "The time of day requested. Return '' if not found, else return AM or PM."
+                            ],
+                            'duration' => [
+                                'type' => 'string',
+                                'description' => "The timeoff duration in hour."
                             ],
                             'reason' => [
                                 'type' => 'string',
@@ -80,16 +80,16 @@ class Home extends BaseController
                 'type' => 'function',
                 'function' => [
                     'name'  => 'get_intention',
-                    'description' => "check if user has agreed to the timeoff request's detail. Context is taken from previous messages.",
+                    'description' => "determine user's intention when requesting for timeoff. Context is taken from previous messages.",
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
-                            'agree' => [
-                                'type' => 'boolean',
-                                'description' => "The user's intention. True if they agree, false is they disagree or can't determine user's intention."
+                            'intention' => [
+                                'type' => 'string',
+                                'description' => "The user's intention. Choose from: register, update, cancel, unknown."
                             ]
                         ],
-                        'required' => ['agree']
+                        'required' => ['context']
                     ]
                 ]
             ]
@@ -116,8 +116,8 @@ class Home extends BaseController
             $params = '';
             $text = '';
             $function_list = [];
-            foreach ($stream as $chunk) {
-                $array = $chunk->choices[0]->toArray();
+            foreach ($stream as $s) {
+                $array = $s->choices[0]->toArray();
                 $delta = $array['delta'];
 
                 //Khi chạy đến token cuối thì delta sẽ rỗng
@@ -128,9 +128,7 @@ class Home extends BaseController
                 if (!empty($delta['tool_calls'])) {
                     $function = $delta['tool_calls'][0]['function'];
                     if (isset($function['name'])) {
-                        //Nếu có function khác thì thêm %% để sau có thể tách ra
                         $function_list[] = $function['name'];
-                        $params .= "%%";
                     }
                     $params .= $function['arguments'];
                 } else {
@@ -142,17 +140,7 @@ class Home extends BaseController
             
             //Nếu GPT gọi function
             if ($params != '') {
-                //Xử lý các params trước khi đưa vào function
-                $function_args = explode('%%', $params);
-                $json_array = [];
-                foreach ($function_args as $arg) {
-                    if ($arg != '') {
-                        $json = json_decode($arg, true);
-                        $json_array[] = $json;
-                    }
-                }
-                $param = array_merge(...$json_array);
-
+                $param = json_decode($params, true);
                 foreach ($function_list as $function) {
                     match($function) {
                         'get_timeoff_detail' => $this->get_timeoff_detail($param),
@@ -160,37 +148,51 @@ class Home extends BaseController
                         default => 'a'
                     };
                 }
+                // $response =  match ($function_list) {
+                //     'get_timeoff_detail' => $this->get_timeoff_detail($param),
+                //     default => [
+                //         'type' => 'response',
+                //         'content' => 'tính năng đang test...'
+                //     ]
+                // };
 
                 $timeoff = $this->session->get('timeoff');
-                $confirm = $this->session->get('confirm');
-                if (isset($timeoff)) {
-                    if (isset($confirm) && $confirm == true) {
+                $context = $this->session->get('context');
+                if (isset($timeoff) && $timeoff['date'] != 'Chưa rõ') {
+                    if ($context == 'confirm') {
                         $response = [
-                            'type' => 'confirm',
+                            'type' => 'timeoff',
                             'content' => "Bạn đã xin nghỉ vào ngày: {$timeoff['date']} {$timeoff['time']} với lý do: {$timeoff['reason']}. Thông tin đã được ghi nhận."
                         ];
                     } else {                        
                         $response = [
-                            'type' => 'check',
+                            'type' => 'timeoff',
                             'content' => "Bạn đã xin nghỉ vào ngày: {$timeoff['date']} {$timeoff['time']} với lý do: {$timeoff['reason']}. Thông tin này đã chính xác chưa?"
                         ];
                     }
                 } else {
-                    $response = [
-                        'type' => 'timeoff',
-                        'content' => "Xin mời cung cấp thông tin để xin nghỉ."
-                    ];
+                    if ($context == 'cancel') {
+                        $response = [
+                            'type' => 'timeoff',
+                            'content' => "Bạn đã hủy yêu cầu nghỉ thành công."
+                        ];
+                    } else {
+                        $response = [
+                            'type' => 'timeoff',
+                            'content' => "Xin mời cung cấp thông tin để xin nghỉ."
+                        ];
+                    }
                 } 
                 return $response;
             } else { //Nếu GPT gửi câu trả lời bình thường
                 $content = [
-                    'type' => 'chat',
+                    'type' => 'response',
                     'content' => $text
                 ];
                 return $content;
             }
         } catch (Exception $e) {
-            log_message('error', "Lỗi: {$e->getMessage()}, line: {$e->getLine()}");
+            log_message('error', "Lỗi: {$e->getMessage()}");
             $content = [
                 'type' => 'error',
                 'content' => "Có lỗi xảy ra trong khi xử lý yêu cầu của bạn. Vui lòng thử lại sau."
@@ -201,7 +203,7 @@ class Home extends BaseController
 
     private function get_timeoff_detail($params) {
         $timeoff = $this->session->get('timeoff');
-        // $context = $this->session->get('context');
+        $context = $this->session->get('context');
 
         //Nếu là yêu cầu xin nghỉ mới
         if (!isset($timeoff)) {
@@ -213,21 +215,47 @@ class Home extends BaseController
                 'reason'  => $params['reason'],
                 'time'  => $params['time'],
             ];
-        } else {
+            $context = 'register';
+            $this->session->set('timeoff', $timeoff);
+            $this->session->set('context', $context);
+        }
+    }
+
+    private function get_intention($params) {
+        $timeoff = $this->session->get('timeoff');
+        $context = $this->session->get('context');
+        if (!isset($context)) {
+            $context = 'register';
+        }
+
+        if (!isset($timeoff)) {
+            $params['date']     = (!isset($params['date']) || $params['date'] == '') ? 'Chưa rõ' : $params['date'];
+            $params['time']     = (!isset($params['time'])) ? '' : $params['time'];
+            $params['reason']   = (!isset($params['reason']) || $params['reason'] == '') ? 'Chưa rõ' : $params['reason'];
+            $timeoff = [
+                'date'  => $params['date'],
+                'reason'  => $params['reason'],
+                'time'  => $params['time'],
+            ];
+            $context = 'register';
+        }
+
+        if ($params['intention'] == 'cancel') {
+            $context = 'cancel';
+            $this->session->remove('timeoff');
+        } else if ($params['intention'] == 'register') {
+            $context = 'register';
+        } else if ($params['intention'] == 'update') {
             //Nếu có thông tin mới thì update, nếu không thì giữ nguyên
             $timeoff['date']    = (isset($params['date']) && $params['date'] != '') ? $params['date'] : $timeoff['date'];
             $timeoff['time']    = (isset($params['time']) && $params['time'] != '') ? $params['time'] : $timeoff['time'];
             $timeoff['reason']  = (isset($params['reason']) && $params['reason'] != '') ? $params['reason'] : $timeoff['reason'];
+            $context = 'update';
+        } else if ($params['intention'] == 'confirm') {
+            $context = 'confirm';
         }
 
         $this->session->set('timeoff', $timeoff);
-    }
-
-    private function get_intention($params) {
-        if (isset($params['agree']) && $params['agree'] == true) {
-            $this->session->set('confirm', true);
-        } else {
-            $this->session->set('confirm', false);
-        }
+        $this->session->set('context', $context);
     }
 }
