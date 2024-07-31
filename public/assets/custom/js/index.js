@@ -71,7 +71,7 @@ document.addEventListener('submit', (e) => {
     });
 })
 
-document.querySelectorAll('.btn-check').forEach((el) => {
+document.querySelectorAll('.confirm-check').forEach((el) => {
     el.addEventListener('click', () => {
         let result = el.dataset.check
         console.log(result)
