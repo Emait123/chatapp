@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Controllers;
+use App\Models\TimeoffModel;
 
 use Exception;
 use \OpenAI;
@@ -13,12 +14,12 @@ class Home extends BaseController
         if (!isset($user)) {
             return redirect()->route('Login::index');
         }
-        $user = [
-            'name'  => 'user',
-            'role_name' => 'Nhân viên'
+
+        $data = [
+            'user' => $user,
+            'active' => 'chat',
         ];
 
-        $data['user'] = $user;
         return view('chat', $data);
     }
 
@@ -42,8 +43,20 @@ class Home extends BaseController
         if (!isset($params['confirm'])) {
             return;
         }
+        $user = $this->session->get('user');
 
         $timeoff = $this->session->get('timeoff');
+        $data = [
+            'employee_id' => $user['id'],
+            'start_date' => $timeoff['date'],
+            'reason'    => $timeoff['reason'],
+        ];
+        if ($timeoff['enddate'] != '') {
+            $data['end_date'] = $timeoff['enddate'];
+        }
+        $timeoffModel = model('TimeoffModel');
+        $timeoffModel->save($data);
+        $this->session->remove('timeoff');
 
         return ['result' => true];
     }
@@ -76,11 +89,13 @@ class Home extends BaseController
                         'properties' => [
                             'date' => [
                                 'type' => 'string',
-                                'description' => "The start date for timeoff request, in 'DD/MM/YYYY' format or any format parsable by PHP's strtotime() function. Return '' if not found."
+                                'description' => "The start date for timeoff request, in 'Y-m-d H:i:s' format. Return '' if not found."
+                                // 'description' => "The start date for timeoff request, in 'DD/MM/YYYY' format or any format parsable by PHP's strtotime() function. Return '' if not found."
                             ],
                             'enddate' => [
                                 'type' => 'string',
-                                'description' => "The end date for timeoff request, in 'DD/MM/YYYY' format or any format parsable by PHP's strtotime() function."
+                                'description' => "The end date for timeoff request, in 'Y-m-d H:i:s' format."
+                                // 'description' => "The end date for timeoff request, in 'DD/MM/YYYY' format or any format parsable by PHP's strtotime() function."
                             ],
                             'time' => [
                                 'type' => 'string',
@@ -91,7 +106,7 @@ class Home extends BaseController
                                 'description' => "The reason for time off, e.g. bị ốm. Return '' if not found."
                             ]
                         ],
-                        'required' => ['date']
+                        'required' => []
                     ]
                 ]
             ],
@@ -229,6 +244,10 @@ class Home extends BaseController
         $timeoff = $this->session->get('timeoff');
         // $context = $this->session->get('context');
 
+        //Trong hàm parseDate có try catch rồi nên k kiểm tra isset
+        $params['date'] = $this->parseDate($params['date']);
+        $params['enddate'] = isset($params['enddate']) ? $this->parseDate($params['enddate']) : '';
+
         //Nếu là yêu cầu xin nghỉ mới.
         if (!isset($timeoff)) {
             $params['date']     = (!isset($params['date'])) ? '' : $params['date'];
@@ -242,6 +261,7 @@ class Home extends BaseController
                 'date'  => $params['date'],
                 'reason'  => $params['reason'],
                 'time'  => $params['time'],
+                'enddate' => $params['enddate']
             ];
         } else {
             //Nếu có thông tin mới thì update, nếu không thì giữ nguyên
@@ -259,6 +279,18 @@ class Home extends BaseController
             $this->session->set('confirm', true);
         } else {
             $this->session->set('confirm', false);
+        }
+    }
+
+    private function parseDate($inputDate) {
+        try {
+            $outputDate = strtotime($inputDate);
+            $formatedDate = date('Y-m-d H:i:s',$outputDate);
+            $startHour = date('H:i:s', strtotime('08:00:00'));
+            $endHour = date('H:i:s', strtotime('17:00:00'));
+            return $formatedDate;
+        } catch (Exception $e) {
+            return '';
         }
     }
 }

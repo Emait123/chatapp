@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Controllers;
+use App\Models\UserModel;
 
 class Login extends BaseController
 {
@@ -12,10 +13,32 @@ class Login extends BaseController
         $post = $this->request->getPost();
         $username = $post['username'];
         $password = $post['password'];
-        if ($username == 'user' && $password == 'mhn') {
-            $this->session->set('user', $username);
+        // $data = [
+        //     'username' => $username,
+        //     'password' => $password,
+        //     'email'    => 'emait123@gmail.com',
+        //     'phone'     => '0123456',
+        //     'last_login' => date('Y-m-d H:i:s'),
+        //     'role_id'   => 2,
+        // ];
+        $userModel = model('UserModel');
+        $user = $userModel->where('username', $username)->first();
+        if ($user == null){
+            return redirect()->route('login')->with('error', 'Not exist');
+        }
+        if ($user && password_verify($password, $user['password'])) {
+            $userModel->where('id', $user['id'])->set('last_login', date('Y-m-d H:i:s'))->update();
+            $userInfo = [
+                'id' => $user['id'],
+                'username' => $user['username'],
+                'email'    => $user['email'],
+                'phone'     => $user['phone'],
+                'role_id'   => $user['role_id'],
+            ];
+            $this->session->set('user', $userInfo);
             return redirect()->route('Home::index');
-        } else {
+        }
+         else {
             return redirect()->back();
         }
     }

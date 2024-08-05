@@ -17,7 +17,7 @@
     <?= $this->renderSection('head_lib') ?>
 </head>
 <body>
-    <div class="container-xxl position-relative bg-secondary bg-gradient d-flex p-0 mx-2">
+    <div class="container-fluid bg-secondary bg-gradient d-flex me-2">
         <?= $this->renderSection('sidebar') ?>
 
         <?= $this->renderSection('content') ?>

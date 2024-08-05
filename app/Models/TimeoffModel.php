@@ -10,6 +10,4 @@ class TimeoffModel extends Model
     protected $primaryKey = 'id';
     protected $allowedFields = ['employee_id', 'request_date', 'start_date', 'end_date', 'duration', 'reason', 'type_id'];
 
-    protected $beforeInsert = ['hashPassword'];
-    protected $beforeUpdate = ['hashPassword'];
 }
