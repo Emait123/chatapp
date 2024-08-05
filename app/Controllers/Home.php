@@ -69,10 +69,10 @@ class Home extends BaseController
     private function ask($question, $context) {
         $today_date = date('l');
         $today = date('h:i a d/m/Y');
-        $tomorrow = date("d/m/Y", strtotime("+1 day"));
         $tomorrow_date = date("l", strtotime("+1 day"));
-        $ngaykia = date("d/m/Y", strtotime("+2 day"));
+        $tomorrow = date("d/m/Y", strtotime("+1 day"));
         $ngaykia_date = date("l", strtotime("+2 day"));
+        $ngaykia = date("d/m/Y", strtotime("+2 day"));
         $next_monday = date("d/m/Y", strtotime('next monday'));
         $tools = [
             [
@@ -83,19 +83,17 @@ class Home extends BaseController
                                         1.Today: {$today_date}, {$today}; 
                                         2.Tomorrow: {$tomorrow_date}, {$tomorrow};
                                         3.'Ngày kia': {$ngaykia_date}, {$ngaykia};
-                                        4.'Tuần sau' means the next week, starts at {$next_monday}.",
+                                        4.'Tuần sau' means the next week, starts at Monday, {$next_monday}.",
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
                             'date' => [
                                 'type' => 'string',
                                 'description' => "The start date for timeoff request, in 'Y-m-d H:i:s' format. Return '' if not found."
-                                // 'description' => "The start date for timeoff request, in 'DD/MM/YYYY' format or any format parsable by PHP's strtotime() function. Return '' if not found."
                             ],
                             'enddate' => [
                                 'type' => 'string',
                                 'description' => "The end date for timeoff request, in 'Y-m-d H:i:s' format."
-                                // 'description' => "The end date for timeoff request, in 'DD/MM/YYYY' format or any format parsable by PHP's strtotime() function."
                             ],
                             'time' => [
                                 'type' => 'string',
@@ -111,23 +109,6 @@ class Home extends BaseController
                 ]
             ],
         ];
-        // [
-        //     'type' => 'function',
-        //     'function' => [
-        //         'name'  => 'get_intention',
-        //         'description' => "check if user has agreed to the timeoff request's detail. Context is taken from previous messages.",
-        //         'parameters' => [
-        //             'type' => 'object',
-        //             'properties' => [
-        //                 'agree' => [
-        //                     'type' => 'boolean',
-        //                     'description' => "The user's intention. True if they agree, false is they disagree or can't determine user's intention."
-        //                 ]
-        //             ],
-        //             'required' => ['agree']
-        //         ]
-        //     ]
-        // ]
 
         //Gửi câu hỏi đến GPT
         try {
@@ -191,7 +172,7 @@ class Home extends BaseController
                 foreach ($function_list as $function) {
                     match($function) {
                         'get_timeoff_detail' => $this->get_timeoff_detail($param),
-                        'get_intention' => $this->get_intention($param),
+                        // 'get_intention' => $this->get_intention($param),
                         default => 'a'
                     };
                 }

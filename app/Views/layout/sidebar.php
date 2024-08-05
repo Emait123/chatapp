@@ -26,7 +26,7 @@
             <img src="https://github.com/mdo.png" alt="" width="32" height="32" class="rounded-circle me-2">
             <strong><?= $user['username'] ?></strong>
         </a>
-        <ul class="dropdown-menu text-small shadow" aria-labelledby="dropdownUser2" style="">
+        <ul class="dropdown-menu text-small shadow" aria-labelledby="dropdownUser2">
             <li><a class="dropdown-item" href="#">New project...</a></li>
             <li><a class="dropdown-item" href="#">Settings</a></li>
             <li><a class="dropdown-item" href="#">Profile</a></li>
