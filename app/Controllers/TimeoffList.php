@@ -16,9 +16,26 @@ class TimeoffList extends BaseController
         $data = [
             'user'  => $user,
             'active' => 'list',
-            'timeoffList' => $timeoffModel->where('employee_id', $user['id'])->findAll()
+            'timeoffList' => $timeoffModel->where('employee_id', $user['id'])->where('deleted', 0)->findAll()
         ];
         return view('timeoff', $data);
+    }
+
+    public function fetch() {
+        $timeoffModel = model('TimeoffModel');
+        $post = $this->request->getPost();
+        switch ($post['action']) {
+            case 'delTimeOff':
+                $id = $post['id'];
+                $data = [
+                    'deleted' => '1',
+                ];
+                if ($timeoffModel->update($id, $data)) {
+                    return $this->response->setJSON(['result' => true]);
+                } else {
+                    return $this->response->setJSON(['result' => false]);
+                }
+        }
     }
 
 }

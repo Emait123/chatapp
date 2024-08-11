@@ -116,6 +116,7 @@ document.getElementById('clear-session').addEventListener('click', () => {
                 }
                 // parse response data
                 response.json().then(data => {
+                    console.log(data)
                     if (data['result'] == true) {
                         location.reload();
                     }
