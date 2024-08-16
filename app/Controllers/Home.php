@@ -39,6 +39,9 @@ class Home extends BaseController
         return $this->response->setJSON($response);
     }
 
+    /**
+     * Chức năng khi người dùng bấm xác nhận thông tin nghỉ phép
+     */
     private function registerTimeoff($params) {
         if (!isset($params['confirm'])) {
             return;
@@ -46,6 +49,42 @@ class Home extends BaseController
         $user = $this->session->get('user');
 
         $timeoff = $this->session->get('timeoff');
+
+        $tools = [
+            [
+                'type' => 'function',
+                'function' => [
+                    'name'  => 'get_timeoff_type',
+                    'description' => "Categorize a Vietnamese request for timeoff. The categories are:
+                                        1.denmuon: if the user is late for work, maximum half a day;
+                                        2.nghiphep: if the timeoff request is for 1 day or more;
+                                        3.chedo: if the timeoff request is due to sickness for pregnancy;
+                                        4.congtac: if the timeoff request is due to a bussiness trip or to study;
+                                        5.nghibu: if the timeoff request is to makeup for working overtime;
+                                        6.khac: can't determine the timeoff categories.",
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'timeoff_type' => [
+                                'type' => 'string',
+                                'description' => "The type of time off. Choose from this list: denmuon; nghiphep; chedo; congtac; nghibu; khac."
+                            ]
+                        ],
+                        'required' => ['timeoff_type']
+                    ]
+                ]
+            ],
+        ];
+
+        $question = "Xin phép nghỉ ngày {$timeoff['date']} với lý do: {$timeoff['reason']}.";
+
+        $api_response = $this->gpt_api_call(
+            tools:$tools, 
+            question:$question, 
+            context:$question, //Chỉ truyền vào đoạn text được chỉ định trước, tránh gây nhầm lẫn cho AI
+            tool_choice:'required' //Bắt buôc phải gọi tool get_timeoff_type
+        );
+    
         $data = [
             'employee_id' => $user['id'],
             'start_date' => $timeoff['date'],
@@ -83,7 +122,8 @@ class Home extends BaseController
                                         1.Today: {$today_date}, {$today}; 
                                         2.Tomorrow: {$tomorrow_date}, {$tomorrow};
                                         3.'Ngày kia': {$ngaykia_date}, {$ngaykia};
-                                        4.'Tuần sau' means the next week, starts at Monday, {$next_monday}.",
+                                        4.'Tuần sau' means the next week, starts at Monday, {$next_monday}.
+                                        Timeoff time ranges from 08:00 to 17:00",
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
@@ -110,22 +150,81 @@ class Home extends BaseController
             ],
         ];
 
-        //Gửi câu hỏi đến GPT
+        //Gọi ChatGPT API
+        $api_response = $this->gpt_api_call($tools, $question, $context);
+        if ($api_response['result'] == 'tool') { //Nếu GPT gọi function
+            $function_list = $api_response['func_list'];
+            $param = $api_response['param'];
+
+            //Chạy function
+            foreach ($function_list as $function) {
+                match($function) {
+                    'get_timeoff_detail' => $this->get_timeoff_detail($param),
+                    // 'get_intention' => $this->get_intention($param),
+                    default => 'a'
+                };
+            }
+
+            //Lấy kết quả và trả lại response
+            $timeoff = $this->session->get('timeoff');
+            if (isset($timeoff)) {
+                if ($timeoff['date'] == '' || $timeoff['reason'] == '') {
+                    $response = [
+                        'type' => 'incomplete',
+                        'date' => $timeoff['date'],
+                        'enddate' => $timeoff['enddate'],
+                        'time' => $timeoff['time'],
+                        'reason' => $timeoff['reason'],
+                    ];
+                } else {
+                    $response = [
+                        'type' => 'check',
+                        'date' => $timeoff['date'],
+                        'enddate' => $timeoff['enddate'],
+                        'time' => $timeoff['time'],
+                        'reason' => $timeoff['reason'],
+                    ];
+                }
+            } else {
+                $response = [
+                    'type' => 'chat',
+                    'content' => "Xin mời cung cấp thông tin để xin nghỉ."
+                ];
+            }
+            return $response;
+        }
+        elseif ($api_response['result'] == 'chat') { //Nếu GPT gửi câu trả lời bình thường
+            $content = [
+                'type' => 'chat',
+                'content' => $api_response['text']
+            ];
+            return $content;
+        }
+        elseif ($api_response['result'] == 'fail') { //Nếu lỗi
+            $content = [
+                'type' => 'error',
+                'content' => "Có lỗi xảy ra trong khi xử lý yêu cầu của bạn. Vui lòng thử lại sau."
+            ];
+            return $content;
+        }
+    }
+
+    private function gpt_api_call($tools, $question, $context, $tool_choice = 'auto') {
         try {
             $yourApiKey = getenv('OPENAI_API_KEY');
             $client = OpenAI::client($yourApiKey);
 
             //Tạo stream để nhận token ngay, tránh lỗi timeout
             $stream = $client->chat()->createStreamed([
-                'model' => 'gpt-4o-mini',
+                'model' => 'gpt-4o-mini', //Tên model sử dung
                 'messages' => [
                     ['role' => 'system', 'content' => "You're a helpful assistant, able to process Vietnamese sentences. User's previous messages are: {$context}. Reply in Vietnamese." ],
                     ['role' => 'user', 'content' => $question],
                 ],
-                'tools' => $tools,
-                'temperature' => 0.1,
-                // 'max_tokens' => 400,
-                
+                'temperature' => 0.1, //Số càng thấp thì câu trả lời của GPT càng đồng nhất, không thay đổi nhiều
+                // 'max_tokens' => 400, //Số lượng input, output token tối đa
+                'tools' => $tools, //Khai báo các hàm muốn ChatGPT dùng
+                'tool_choice' => $tool_choice,
             ]);
 
             $params = '';
@@ -154,10 +253,10 @@ class Home extends BaseController
                     }
                 }
             }
-            
+
             //Nếu GPT gọi function
             if ($params != '') {
-                //Xử lý các params trước khi đưa vào function
+                //Xử lý các params trước khi return
                 $function_args = explode('%%', $params);
                 $json_array = [];
                 foreach ($function_args as $arg) {
@@ -168,56 +267,25 @@ class Home extends BaseController
                 }
                 $param = array_merge(...$json_array);
 
-                //Chạy function
-                foreach ($function_list as $function) {
-                    match($function) {
-                        'get_timeoff_detail' => $this->get_timeoff_detail($param),
-                        // 'get_intention' => $this->get_intention($param),
-                        default => 'a'
-                    };
-                }
-
-                //Lấy kết quả và trả lại response
-                $timeoff = $this->session->get('timeoff');
-                if (isset($timeoff)) {
-                    if ($timeoff['date'] == '' || $timeoff['reason'] == '') {
-                        $response = [
-                            'type' => 'incomplete',
-                            'date' => $timeoff['date'],
-                            'enddate' => $timeoff['enddate'],
-                            'time' => $timeoff['time'],
-                            'reason' => $timeoff['reason'],
-                        ];
-                    } else {
-                        $response = [
-                            'type' => 'check',
-                            'date' => $timeoff['date'],
-                            'enddate' => $timeoff['enddate'],
-                            'time' => $timeoff['time'],
-                            'reason' => $timeoff['reason'],
-                        ];
-                    }
-                } else {
-                    $response = [
-                        'type' => 'chat',
-                        'content' => "Xin mời cung cấp thông tin để xin nghỉ."
-                    ];
-                }
-                return $response;
-            } else { //Nếu GPT gửi câu trả lời bình thường
-                $content = [
-                    'type' => 'chat',
-                    'content' => $text
+                return [
+                    'result' => 'tool',
+                    'param' => $param,
+                    'func_list' => $function_list
                 ];
-                return $content;
             }
+            //Nếu GPT gửi câu trả lời bình thường 
+            else {
+                return [
+                    'result' => 'chat',
+                    'text' => $text,
+                ];
+            }
+
         } catch (Exception $e) {
             log_message('error', "Lỗi: {$e->getMessage()}, line: {$e->getLine()}");
-            $content = [
-                'type' => 'error',
-                'content' => "Có lỗi xảy ra trong khi xử lý yêu cầu của bạn. Vui lòng thử lại sau."
+            return [
+                'result' => 'fail'
             ];
-            return $content;
         }
     }
 

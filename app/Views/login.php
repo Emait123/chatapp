@@ -13,7 +13,7 @@
 	<body class="text-center">
         <main class="form-signin">
             <form action="<?= url_to('Login::login') ?>" method="post">
-                <img class="mb-4" src="<?= base_url('assets/img/logo.webp') ?>" alt="" width="72" height="57">
+                <img class="mb-4" src="<?= base_url('assets/img/logo.jpg') ?>" alt="" width="72" height="57">
                 <h1 class="h3 mb-3 fw-normal">Đăng nhập</h1>
 
                 <div class="form-floating">
