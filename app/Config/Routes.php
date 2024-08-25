@@ -12,3 +12,16 @@ $routes->get('/logout', 'Login::logout', ['as' => 'logout']);
 $routes->get('/timeoff', 'TimeoffList::index', ['as' => 'timeofflist']);
 $routes->post('/timeoff', 'TimeoffList::fetch');
 $routes->post('/home/api', 'Home::fetch');
+
+$routes->get('employeelist', 'Employee::index', ['as' => 'employeelist']);
+$routes->post('employeelist', 'Employee::process');
+
+$routes->get('/deletedata', 'DeleteData::index');
+$routes->get('/tos', 'DeleteData::index');
+
+$routes->get('/webhook', 'WebHook::index');
+$routes->post('/webhook', 'WebHook::postRequest');
+$routes->post('/telegram/webhook', 'WebHook::telegram_receiveMessage');
+
+$routes->get('/tool', 'Tool::index');
+$routes->post('/tool', 'Tool::processFile');

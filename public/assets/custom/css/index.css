@@ -137,11 +137,11 @@ button {
 
 /* text */
 
-h1 {
+/* h1 {
     font-size: 15px;
     color: var(--light-text);
     grid-area: title;
-}
+} */
 
 h2, p {
     color: var(--medium-light-text); 

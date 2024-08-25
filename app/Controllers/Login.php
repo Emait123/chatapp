@@ -16,12 +16,13 @@ class Login extends BaseController
         // $data = [
         //     'username' => $username,
         //     'password' => $password,
-        //     'email'    => 'emait123@gmail.com',
+        //     'email'    => 'tetra.dragon197@gmail.com',
         //     'phone'     => '0123456',
         //     'last_login' => date('Y-m-d H:i:s'),
-        //     'role_id'   => 2,
+        //     'role_id'   => '1',
         // ];
         $userModel = model('UserModel');
+        // $userModel->insert($data);
         $user = $userModel->where('username', $username)->first();
         if ($user == null){
             return redirect()->route('login')->with('error', 'Not exist');

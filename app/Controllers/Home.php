@@ -214,6 +214,7 @@ class Home extends BaseController
             $yourApiKey = getenv('OPENAI_API_KEY');
             $client = OpenAI::client($yourApiKey);
 
+            $context = '';
             //Tạo stream để nhận token ngay, tránh lỗi timeout
             $stream = $client->chat()->createStreamed([
                 'model' => 'gpt-4o-mini', //Tên model sử dung
@@ -222,10 +223,10 @@ class Home extends BaseController
                     ['role' => 'user', 'content' => $question],
                 ],
                 'temperature' => 0.1, //Số càng thấp thì câu trả lời của GPT càng đồng nhất, không thay đổi nhiều
-                // 'max_tokens' => 400, //Số lượng input, output token tối đa
-                'tools' => $tools, //Khai báo các hàm muốn ChatGPT dùng
-                'tool_choice' => $tool_choice,
             ]);
+            // // 'max_tokens' => 400, //Số lượng input, output token tối đa
+            // 'tools' => $tools, //Khai báo các hàm muốn ChatGPT dùng
+            // 'tool_choice' => $tool_choice,
 
             $params = '';
             $text = '';

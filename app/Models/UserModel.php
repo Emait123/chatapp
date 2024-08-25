@@ -8,7 +8,7 @@ class UserModel extends Model
 {
     protected $table = 'user';
     protected $primaryKey = 'id';
-    protected $allowedFields = ['username', 'password', 'email', 'phone', 'createdate', 'last_login'];
+    protected $allowedFields = ['username', 'password', 'email', 'phone', 'createdate', 'last_login', 'role_id'];
 
     protected $beforeInsert = ['hashPassword'];
     protected $beforeUpdate = ['hashPassword'];
@@ -20,6 +20,26 @@ class UserModel extends Model
             $data['data']['password'] = password_hash($data['data']['password'], PASSWORD_DEFAULT);
         }
         return $data;
+    }
+
+    public function getEmployeeList() {
+        $list = $this->select('user.id, user.username, employee.name, employee.telegram_id')
+            ->join('employee', 'user.id = employee.user_id', 'left')
+            ->findAll();
+        return $list;
+    }
+
+    public function insertEmployee($data) {
+        $builder = $this->db->table('employee');
+        return $builder->insert($data);
+    }
+
+    public function getEmployeeInfo($telegram_id) {
+        $builder = $this->db->table('employee');
+        $query = $builder->select('employee.name, employee.telegram_id')
+            ->where('telegram_id', $telegram_id);
+        $result = $query->get()->getRowArray();
+        return $result['name'];
     }
 
     public function getUserByUsername($username)
