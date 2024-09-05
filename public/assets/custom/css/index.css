@@ -16,6 +16,10 @@ html, body {
     font-family: 'Inter', sans-serif;
 }
 
+.container-fluid {
+    min-height: 100vh;
+}
+
 main {    
     background-color: slategrey;
     height: 100vh;

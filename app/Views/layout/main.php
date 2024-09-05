@@ -17,10 +17,15 @@
     <?= $this->renderSection('head_lib') ?>
 </head>
 <body>
-    <div class="container-fluid bg-secondary bg-gradient d-flex me-2">
-        <?= $this->renderSection('sidebar') ?>
-
-        <?= $this->renderSection('content') ?>
+    <div class="container-fluid bg-secondary bg-gradient ">
+        <div class="row">
+            <div class="col-3">
+                <?= $this->renderSection('sidebar') ?>
+            </div>
+            <div class="col-9">
+                <?= $this->renderSection('content') ?>
+            </div>
+        </div>
     </div>
 </body>
 </html>

@@ -2,11 +2,13 @@
 
 namespace App\Controllers;
 
-use Exception;
-use \OpenAI;
+use DateTime;
+use DateInterval;
+use DatePeriod;
 use CodeIgniter\HTTP\ResponseInterface;
 use App\Models\TimeoffModel;
 use App\Models\UserModel;
+use Exception;
 
 class WebHook extends BaseController
 {
@@ -54,88 +56,9 @@ class WebHook extends BaseController
         return $this->response->setJSON(['result' => 'ok']);
     }
 
-    private function gpt_api_call($tools = null, $question, $context, $tool_choice = 'auto') {
-        try {
-            $yourApiKey = getenv('OPENAI_API_KEY');
-            $client = OpenAI::client($yourApiKey);
-
-            //Tạo stream để nhận token ngay, tránh lỗi timeout
-            $stream = $client->chat()->createStreamed([
-                'model' => 'gpt-4o-mini', //Tên model sử dung
-                'messages' => [
-                    ['role' => 'system', 'content' => "You're a helpful assistant, able to process Vietnamese sentences. User's previous messages are: {$context}. Reply in Vietnamese." ],
-                    ['role' => 'user', 'content' => $question],
-                ],
-                'temperature' => 0.1, //Số càng thấp thì câu trả lời của GPT càng đồng nhất, không thay đổi nhiều
-                // 'max_tokens' => 400, //Số lượng input, output token tối đa
-                // 'tools' => $tools, //Khai báo các hàm muốn ChatGPT dùng
-                // 'tool_choice' => $tool_choice,
-            ]);
-
-            $params = '';
-            $text = '';
-            $function_list = [];
-            foreach ($stream as $chunk) {
-                $array = $chunk->choices[0]->toArray();
-                $delta = $array['delta'];
-
-                //Khi chạy đến token cuối thì delta sẽ rỗng
-                if (empty($delta)) {
-                    break;
-                }
-
-                if (!empty($delta['tool_calls'])) {
-                    $function = $delta['tool_calls'][0]['function'];
-                    if (isset($function['name'])) {
-                        //Nếu có function khác thì thêm %% để sau có thể tách ra
-                        $function_list[] = $function['name'];
-                        $params .= "%%";
-                    }
-                    $params .= $function['arguments'];
-                } else {
-                    if (!isset($delta['role']) && isset($delta['content'])) {
-                        $text .= $delta['content'];
-                    }
-                }
-            }
-
-            //Nếu GPT gọi function
-            if ($params != '') {
-                //Xử lý các params trước khi return
-                $function_args = explode('%%', $params);
-                $json_array = [];
-                foreach ($function_args as $arg) {
-                    if ($arg != '') {
-                        $json = json_decode($arg, true);
-                        $json_array[] = $json;
-                    }
-                }
-                $param = array_merge(...$json_array);
-
-                return [
-                    'result' => 'tool',
-                    'param' => $param,
-                    'func_list' => $function_list
-                ];
-            }
-            //Nếu GPT gửi câu trả lời bình thường 
-            else {
-                return [
-                    'result' => 'chat',
-                    'text' => $text,
-                ];
-            }
-
-        } catch (Exception $e) {
-            log_message('error', "Lỗi: {$e->getMessage()}, line: {$e->getLine()}");
-            return [
-                'result' => 'fail'
-            ];
-        }
-    }
-
     public function telegram_receiveMessage() {
         $request = $this->request->getJSON();
+        $chatModel = model('ChatModel');
         // log_message('notice', json_encode($request));
 
         $today_date = date('l');
@@ -155,7 +78,7 @@ class WebHook extends BaseController
                                         2.Tomorrow: {$tomorrow_date}, {$tomorrow};
                                         3.'Ngày kia': {$ngaykia_date}, {$ngaykia};
                                         4.'Tuần sau' means the next week, starts at Monday, {$next_monday}.
-                                        Timeoff time ranges from 08:00 to 17:00",
+                                        Timeoff time ranges from 08:00 to 17:00.",
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
@@ -166,10 +89,6 @@ class WebHook extends BaseController
                             'enddate' => [
                                 'type' => 'string',
                                 'description' => "The end date for timeoff request, in 'Y-m-d H:i:s' format."
-                            ],
-                            'time' => [
-                                'type' => 'string',
-                                'description' => "The time of day requested. Return '' if not found, else return 'AM' or 'PM'."
                             ],
                             'reason' => [
                                 'type' => 'string',
@@ -183,69 +102,314 @@ class WebHook extends BaseController
         ];
 
         if (isset($request->message)) {
+            log_message('notice', json_encode($request));
             $chatId = $request->message->chat->id;
-            $text = $request->message->text;
             $userID = $request->message->from->id;
+            $text = $request->message->text;
+            
+            if (!isset($text)) {
+                return $this->response->setStatusCode(ResponseInterface::HTTP_OK)->setJSON(['status' => 'ok']);
+            }
             
             $userModel = new UserModel();
             $userName = $userModel->getEmployeeInfo($userID);
-            $userName = isset($userName) ? $userName : '';
+            $userName = isset($userName) ? $userName['name'] : '';
             // Process the message or perform any action here
             if ($text == '/start') {
                 $this->sendMessage($chatId, "Xin chào {$userName}! Tôi có thể giúp gì bạn?");
             } elseif ($text == '/info') {
-                $this->sendMessage($chatId, "Xin chào {$userName}! Câu lệnh này vẫn chưa setup xong");
+                $info = $userModel->getEmployeeTimeOff($userID);
+                $cur_month = date("m");
+                $this->sendMessage($chatId, "Xin chào {$userName}! \nTrong năm nay bạn đã xin nghỉ tổng cộng {$info['total']} ngày công. \nTháng {$cur_month} này bạn đã xin nghỉ {$info['month_count']} lần với tổng số {$info['month_duration']} ngày công, trong đó: \nNghỉ chế độ: {$info['month_chedo']}\nNghỉ có lương: {$info['month_coluong']}\nNghỉ không lương: {$info['month_koluong']} \nBạn còn {$info['remain']} ngày phép nữa.");
+            } elseif ($text == '/deletehistory') {
+                $chatModel->where('tel_user_id', $userID)->set('deleted', 1)->update();
+                $this->sendMessage($chatId, "Lịch sử chat trong CSDL đã xóa xong.");
             }
             else {
-                $chatModel = model('ChatModel');
                 $data = [
                     'tel_user_id' => $userID,
                     'add_date' => date("Y-m-d H:i:s", $request->message->date),
-                    'message' => $text
+                    'message' => $text,
+                    'type' => 'user',
                 ];
                 $chatModel->insert($data);
-                $context = $chatModel->getChatContext($userID, 5);
-                // $this->sendMessage($chatId, 'Bot chưa setup xong GPT.');
-                $result = $this->gpt_api_call(tools:$tools, question:$text, context:$context);
-                return $result;
+                $context = $chatModel->getChatContext($userID, 10);
+                // log_message('notice', "CONTEXT: {$context}");
+                if ($userName != '') {
+                    $context = "Tên tôi là:{$userName}" . $context;
+                }
+
+                $result = $this->gpt_api_call(question:$text, context:$context, tools:$tools);
+
                 if ($result['result'] == 'chat') {
                     $this->sendMessage($chatId, $result['text']);
                 } elseif ($result['result'] == 'tool') {
-                    $reply = $this->processToolCall($result['param'], $result['func_list']);
-                    $this->sendMessage($chatId, $reply);
+                    $this->processToolCall($userID, $chatId, $result['param'], $result['func_list']);
+                    // $this->sendMessage($chatId, $reply);
                 } elseif ($result['result'] == 'fail') {
                     $this->sendMessage($chatId, 'Có lỗi xảy ra trong khi xử lý yêu cầu của bạn.');
                 }
             }
+        } elseif (isset($request->callback_query)) {
+            $chatId = $request->callback_query->message->chat->id;
+            $userID = $request->callback_query->from->id;
+            $messageID = $request->callback_query->message->message_id;
+            $text   = $request->callback_query->message->text;
+            $data   = $request->callback_query->data;
+
+            //Edit lại tin nhắn, bỏ inline button vì telegram không tự động bỏ
+            $this->editMessage($chatId, $messageID, $text);
+
+            if ($data == 'confirm_false') {
+                $data = [
+                    'tel_user_id' => $userID,
+                    'add_date' => date("Y-m-d H:i:s"),
+                    'message' => 'Bạn muốn thay đổi thông tin gì?',
+                    'type' => 'assistant',
+                ];
+                $chatModel->insert($data);
+                $this->sendMessage($chatId, $data['message']);
+            } elseif ($data == 'confirm_true') {
+                // log_message('notice', "Confirm mess:{$text}");
+                $insertResult = $this->saveTimeOff($text, $userID);
+                if ($insertResult) {
+                    $this->sendMessage($chatId, 'Cảm ơn bạn đã xác nhận! Thông tin nghỉ phép của bạn đã được ghi nhận.');
+                } else {
+                    $this->sendMessage($chatId, 'Có lỗi xảy ra trong quá trình lưu.');
+                }
+            }
+
         }
 
         return $this->response->setStatusCode(ResponseInterface::HTTP_OK)->setJSON(['status' => 'ok']);
     }
 
-    private function processToolCall($params, $function_list) {
+    private function processToolCall($userID, $chatID, $params, $function_list) {
+        $chatModel = model('ChatModel');
         foreach ($function_list as $func) {
             if ($func == 'get_timeoff_detail') {
-                return $this->get_timeoff_detail($params);
+                $result = $this->get_timeoff_detail($params);
             } else {
-                return 'Có lỗi xảy ra';
+                $result = [
+                    'result' => 'fail',
+                    'text' => 'Có lỗi xảy ra'
+                ];
             }
         }
+
+        // log_message('notice', json_encode($result));
+        
+        if ($result['result'] == 'fail' || $result['result'] == 'noinfo') {
+            $this->sendMessage($chatID, $result['text']);
+        } elseif ($result['result'] == 'check') {
+            $data = [
+                'tel_user_id' => $userID,
+                'add_date' => date("Y-m-d H:i:s"),
+                'message' => $result['text'],
+                'type' => 'assistant',
+            ];
+            $chatModel->insert($data);
+
+            $this->sendMessage($chatID, $result['text'], $result['inline_keyboard']);
+        }
+
+        return $result;
     }
 
     private function get_timeoff_detail($params) {
-        //Trong hàm parseDate có try catch rồi nên k kiểm tra isset
         $params['date'] = isset($params['date']) ? $this->parseDate($params['date']) : '';
         $params['enddate'] = isset($params['enddate']) ? $this->parseDate($params['enddate']) : '';
-        $params['time']     = (!isset($params['time'])) ? '' : $params['time'];
-        $params['reason']   = (!isset($params['reason'])) ? '' : $params['reason'];
+        // $params['time']     = (!isset($params['time'])) ? '' : $params['time'];
+        $params['reason']   = (isset($params['reason'])) ? $params['reason'] : '';
 
-        return "Bạn đã xin nghỉ vào ngày {$params['date']} với lý do {$params['reason']}";
+        $inline_button = [
+            'inline_keyboard' => [
+                [
+                    ['text' => 'Đồng ý', 'callback_data' => 'confirm_true'],
+                    ['text' => 'Không đồng ý', 'callback_data' => 'confirm_false'],
+                ]
+            ]
+        ];
+
+        // Lấy thời gian hiện tại
+        $currentDateTime = new DateTime();
+        $currentHour = (int) $currentDateTime->format('H');
+
+        // Kiểm tra nếu thời gian hiện tại đã vượt qua 17:00 (5:00 PM)
+        if ($currentHour >= 17) {
+            // Nếu vượt qua 17:00, lấy 08:00 sáng ngày hôm sau
+            $currentDateTime->modify('+1 day')->setTime(8, 0);
+        }
+        // Trả về thời gian theo định dạng
+        $today = $currentDateTime->format('d/m/Y H:i');
+        $today_end = $currentDateTime->setTime(17, 0)->format('d/m/Y H:i');
+
+        // $today = date('Y-m-d 08:00:00');
+
+        //Tạo 2 biến: startDate là ngày bắt đầu, endDate là 17h cùng ngày
+        if ($params['date'] != '') {
+            $startDate_string = date('d/m/Y H:i',strtotime($params['date']));
+            $startDate = DateTime::createFromFormat('d/m/Y H:i', $startDate_string);
+            $endDate = $startDate->setTime(17, 0)->format('d/m/Y H:i');
+        }
+
+        if ($params['date'] != '' && $params['enddate'] == '') {
+            // Nếu không có end_date, lấy end_date là cuối ngày
+            $params['enddate'] = $endDate;
+        } elseif ($params['date'] == '' && $params['enddate'] != '') {
+            // Nếu không có start_date, lấy start_date bắt đầu từ bây giờ
+            $params['enddate'] = $today;
+        }
+
+        if ($params['reason'] == '') {
+            if ($params['date'] == '' && $params['enddate'] == '') {
+                return [
+                    'result' => 'noinfo',
+                    'text' => "Các thông tin xin nghỉ phép vẫn chưa đầy đủ. Xin mời cung cấp ngày bắt đầu, ngày kết thúc, lý do xin nghỉ phép.",
+                ];
+            } else {
+                $result = [
+                    'result' => 'check',
+                    'text' => "Thông tin nghỉ phép;\nBắt đầu: {$params['date']};\nKết thúc: {$params['enddate']};\nLý do: {$params['reason']};\nVì chưa có lý do nghỉ nên yêu cầu sẽ bị tính là nghỉ không lương. Các thông tin này đã đúng chưa?",
+                    'inline_keyboard' => json_encode($inline_button)
+                ];
+            }
+        } else {
+            if ($params['date'] == '' && $params['enddate'] == '') {
+                $params['date'] = $today;
+                $params['enddate'] = $today_end;
+                $result = [
+                    'result' => 'check',
+                    'text' => "Bạn chưa cung cấp ngày nghỉ nên sẽ lấy ngày gần nhất. Thông tin nghỉ phép;\nBắt đầu: {$params['date']};\nKết thúc: {$params['enddate']};\nLý do: {$params['reason']};\nCác thông tin này đã đúng chưa?",
+                    'inline_keyboard' => json_encode($inline_button)
+                ];
+            } else {
+                $result = [
+                    'result' => 'check',
+                    'text' => "Thông tin nghỉ phép;\nBắt đầu: {$params['date']};\nKết thúc: {$params['enddate']};\nLý do: {$params['reason']};\nCác thông tin này đã đúng chưa?",
+                    'inline_keyboard' => json_encode($inline_button)
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    private function saveTimeOff($text, $telegram_user_id) {
+        $userModel = model('UserModel');
+        $timeOffModel = model('TimeoffModel');
+
+        $array = explode(";", $text);
+        // log_message('notice', json_encode($array));
+        $details = [
+            'start' => trim(str_replace("Bắt đầu:", "", $array[1])),
+            'end' => trim(str_replace("Kết thúc:", "", $array[2])),
+            'reason' => trim(str_replace("Lý do:", "", $array[3])),
+        ];
+
+        //Tính số ngày công xin nghỉ
+        $startDate = DateTime::createFromFormat('d/m/Y H:i', $details['start']);
+        $endDate = DateTime::createFromFormat('d/m/Y H:i', $details['end']);
+        // Đặt khoảng thời gian là 1 ngày
+        $dateRange = new DatePeriod(
+            $startDate, 
+            new DateInterval('P1D'), 
+            $endDate,
+            DatePeriod::INCLUDE_END_DATE
+        );
+
+        $workdays = 0;
+        foreach ($dateRange as $date) {
+            // Kiểm tra nếu ngày hiện tại không phải là thứ 7 (6) hoặc Chủ nhật (0)
+            if ($date->format('N') < 6 && $date->format('N') > 0) {
+                if ($date == $dateRange->start || $date == $dateRange->end) {
+                    // $endHour = $date;
+                    // $endHour->setTime(17, 0);
+                    // $diff = $endHour->diff($date);
+                    // $hour = ($diff->h < 8) ? 0.5 : 1;
+                    // $workdays += $hour;
+                    $workdays++;
+                } else {
+                    $workdays++;
+                }
+            }
+        }
+
+        //Thông tin để lưu vào CSDL
+        $employee = $userModel->getEmployeeInfo($telegram_user_id);
+        $data = [
+            'employee_id' => $employee['id'],
+            'request_date' => date('Y-m-d H:i:s'),
+            'start_date' => $startDate->format('Y-m-d H:i:s'),
+            'end_date' => $endDate->format('Y-m-d H:i:s'),
+            'reason' => $details['reason'],
+            'duration' => $workdays,
+        ];
+
+        //Phân loại yêu cầu nghỉ dựa theo lý do nghỉ
+        $tools = [
+            [
+                'type' => 'function',
+                'function' => [
+                    'name'  => 'get_timeoff_type',
+                    'description' => "Categorize a Vietnamese request for timeoff according to reason. The categories are:
+                                        1.denmuon: if the user is late for work, maximum half a day;
+                                        2.nghiphep: if the timeoff request is for 1 day or more;
+                                        3.chedo: if the timeoff request is due to sickness or pregnancy;
+                                        4.congtac: if the timeoff request is due to a bussiness trip or to study;
+                                        5.nghibu: if the timeoff request is to makeup for working overtime;
+                                        6.khac: can't determine the timeoff categories.",
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'timeoff_type' => [
+                                'type' => 'string',
+                                'description' => "The type of time off. Choose from this list: denmuon; nghiphep; chedo; congtac; nghibu; khac."
+                            ]
+                        ],
+                        'required' => ['timeoff_type']
+                    ]
+                ]
+            ],
+        ];
+
+        if ($details['reason'] != '') {
+            $api_response = $this->gpt_api_call(
+                tools:$tools, 
+                question:$details['reason'], 
+                context:'', //Chỉ truyền vào đoạn text được chỉ định trước, tránh gây nhầm lẫn cho AI
+                tool_choice:'required' //Bắt buôc phải gọi tool get_timeoff_type
+            );
+            if ($api_response['result'] == 'tool') {
+                $type = $api_response['param']['timeoff_type'];
+                if ($type == 'chedo') {
+                    //Nghỉ chế độ, không tính vào số ngày phép
+                    $data['type'] = 'chedo';
+                } elseif (in_array($type, ['denmuon', 'nghiphep', 'congtac', 'nghibu'])) {
+                    //Nghỉ có lương nếu còn ngày phép, không lương nếu hết ngày
+                    $timeOffInfo = $userModel->getEmployeeTimeOff($telegram_user_id);
+                    if ($timeOffInfo['remain'] > $workdays) {
+                        $data['type'] = 'luong';
+                    } else {
+                        $data['type'] = 'koluong';
+                    }
+                } else {
+                    //Các trường hợp còn lại đều không lương
+                    $data['type'] = 'koluong';
+                }
+            } else {
+                $data['type'] = 'koluong';
+            }
+        }
+
+        return $timeOffModel->insert($data);
     }
 
     private function parseDate($inputDate) {
         try {
             $outputDate = strtotime($inputDate);
-            $formatedDate = date('Y-m-d H:i:s',$outputDate);
+            $formatedDate = date('d/m/Y H:i',$outputDate);
+            // $formatedDate = date('Y-m-d H:i:s',$outputDate);
             $startHour = date('H:i:s', strtotime('08:00:00'));
             $endHour = date('H:i:s', strtotime('17:00:00'));
             return $formatedDate;
@@ -255,14 +419,46 @@ class WebHook extends BaseController
     }
 
     // Send a message using Telegram API
-    public function sendMessage($chatId, $message)
+    public function sendMessage($chatId, $message, $inline = null)
     {
         $token = getenv('TELEGRAM_BOT_TOKEN');
         $url = "https://api.telegram.org/bot{$token}/sendMessage";
 
+        if (!isset($inline)) {
+            $data = [
+                'chat_id' => $chatId,
+                'text' => $message
+            ];
+        } else {
+            $data = [
+                'chat_id' => $chatId,
+                'text' => $message,
+                'reply_markup' => $inline
+            ];
+        }
+
+        $options = [
+            'http' => [
+                'header'  => "Content-Type: application/x-www-form-urlencoded\r\n",
+                'method'  => 'POST',
+                'content' => http_build_query($data),
+            ],
+        ];
+
+        $context  = stream_context_create($options);
+        file_get_contents($url, false, $context);
+    }
+
+    // Chỉnh sửa tin nhắn
+    public function editMessage($chatID, $messageID, $text)
+    {
+        $token = getenv('TELEGRAM_BOT_TOKEN');
+        $url = "https://api.telegram.org/bot{$token}/editMessageText";
+
         $data = [
-            'chat_id' => $chatId,
-            'text' => $message
+            'chat_id' => $chatID,
+            'message_id' => $messageID,
+            'text' => $text
         ];
 
         $options = [

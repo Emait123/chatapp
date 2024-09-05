@@ -36,10 +36,58 @@ class UserModel extends Model
 
     public function getEmployeeInfo($telegram_id) {
         $builder = $this->db->table('employee');
-        $query = $builder->select('employee.name, employee.telegram_id')
+        $query = $builder->select('employee.id, employee.name, employee.telegram_id')
             ->where('telegram_id', $telegram_id);
         $result = $query->get()->getRowArray();
-        return $result['name'];
+        return $result;
+    }
+
+    public function getEmployeeTimeOff($telegram_id) {
+        $cur_year = date("Y");
+        $cur_month = date("m");
+        $builder = $this->db->table('employee');
+        $query = $builder->select()
+            ->join('timeoff', 'employee.id = timeoff.employee_id', 'left')
+            ->where('YEAR(start_date)', $cur_year)
+            ->where('telegram_id', $telegram_id);
+        $result = $query->get()->getResultArray();
+
+        $month_count = 0;
+        $month_duration = 0;
+        $month_chedo = 0;
+        $month_coluong = 0;
+        $month_koluong = 0;
+        $total_duration = 0;
+        $phep_duration = 0;
+        foreach ($result as $timeoff) {
+            $month = date('m', strtotime($timeoff['start_date']));
+            if ($month == $cur_month) {
+                $month_count++;
+                $month_duration += $timeoff['duration'];
+                if ($timeoff['type'] == 'chedo') {
+                    $month_chedo += $timeoff['duration'];
+                } elseif ($timeoff['type'] == 'luong') {
+                    $month_coluong += $timeoff['duration'];
+                } else {
+                    $month_koluong += $timeoff['duration'];
+                }
+            }
+            if ($timeoff['type'] == 'luong') {
+                $phep_duration += $timeoff['duration'];
+            }
+            $total_duration += $timeoff['duration'];
+        }
+        $remain = $phep_duration > 12 ? 0 : 12-$phep_duration;
+
+        return [
+            'total' => $total_duration,
+            'month_count' => $month_count,
+            'month_duration' => $month_duration,
+            'month_chedo' => $month_chedo,
+            'month_coluong' => $month_coluong,
+            'month_koluong' => $month_koluong,
+            'remain' => $remain,
+        ];
     }
 
     public function getUserByUsername($username)

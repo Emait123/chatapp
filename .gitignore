@@ -3,3 +3,4 @@
 /writable/logs
 .env
 /writable/session
+.env
