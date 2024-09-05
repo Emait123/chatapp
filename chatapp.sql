@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Aug 11, 2024 at 10:30 AM
+-- Generation Time: Sep 05, 2024 at 10:47 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -24,6 +24,20 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `chat_history`
+--
+
+CREATE TABLE `chat_history` (
+  `id` int(11) NOT NULL,
+  `tel_user_id` bigint(20) NOT NULL COMMENT 'telegram user id',
+  `add_date` datetime NOT NULL,
+  `message` varchar(255) NOT NULL,
+  `deleted` tinyint(4) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `employee`
 --
 
@@ -32,15 +46,19 @@ CREATE TABLE `employee` (
   `user_id` int(11) DEFAULT NULL,
   `name` varchar(255) DEFAULT NULL,
   `birth` date DEFAULT NULL,
-  `gender` tinyint(4) DEFAULT NULL
+  `gender` tinyint(4) DEFAULT NULL,
+  `telegram_id` varchar(128) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `employee`
 --
 
-INSERT INTO `employee` (`id`, `user_id`, `name`, `birth`, `gender`) VALUES
-(1, 1, 'Nhân viên 1', '1997-03-24', 1);
+INSERT INTO `employee` (`id`, `user_id`, `name`, `birth`, `gender`, `telegram_id`) VALUES
+(1, 1, 'Nhân viên 1', '1997-03-24', 1, ''),
+(2, 3, 'Lê Diệu Thúy', NULL, NULL, '5304040462'),
+(3, 4, 'Trương Tiến Tùng', NULL, NULL, '5580139045'),
+(4, 5, 'Trương Tiến Đạt', NULL, NULL, '7050621296');
 
 -- --------------------------------------------------------
 
@@ -79,7 +97,7 @@ CREATE TABLE `timeoff` (
   `reason` varchar(255) DEFAULT NULL,
   `approved` tinyint(1) DEFAULT 0,
   `approved_by` int(11) DEFAULT NULL,
-  `approved_date` datetime DEFAULT NULL,
+  `approved_date` datetime DEFAULT current_timestamp(),
   `deleted` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -89,7 +107,37 @@ CREATE TABLE `timeoff` (
 
 INSERT INTO `timeoff` (`id`, `employee_id`, `request_date`, `month`, `year`, `start_date`, `end_date`, `duration`, `reason`, `approved`, `approved_by`, `approved_date`, `deleted`) VALUES
 (1, 1, '2024-08-04 14:27:20', NULL, NULL, '2024-08-07 12:00:00', '2024-08-07 17:00:00', NULL, 'nhà có việc bận', 0, NULL, '2024-08-04 14:27:20', 0),
-(2, 1, '2024-08-05 09:18:16', NULL, NULL, '2024-08-13 00:00:00', '2024-08-13 23:59:59', NULL, 'nhà có việc bận', 0, NULL, '2024-08-05 09:18:16', 0);
+(2, 1, '2024-08-05 09:18:16', NULL, NULL, '2024-08-13 00:00:00', '2024-08-13 23:59:59', NULL, 'nhà có việc bận', 0, NULL, '2024-08-05 09:18:16', 0),
+(3, 1, '2024-08-05 16:05:47', NULL, NULL, '2024-08-09 00:00:00', '2024-08-09 23:59:59', NULL, 'có lịch đi khám bệnh', 0, NULL, '2024-08-05 16:05:47', 0),
+(4, 1, '2024-08-15 13:48:58', NULL, NULL, '2024-08-16 00:00:00', NULL, NULL, 'xin nghỉ', 0, NULL, '2024-08-15 13:48:58', 0),
+(5, 4, '2024-08-27 09:13:02', NULL, NULL, '1970-01-01 08:00:00', '1970-01-01 08:00:00', 1, 'khám bệnh', 0, NULL, '2024-08-27 09:13:02', 0),
+(6, 4, '2024-08-27 09:19:33', NULL, NULL, '2024-08-29 08:00:00', '2024-08-29 17:00:00', 1, 'khám bệnh', 0, NULL, '2024-08-27 09:19:45', 0);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `tool`
+--
+
+CREATE TABLE `tool` (
+  `id` int(11) NOT NULL,
+  `img_name` varchar(128) DEFAULT NULL,
+  `msv` varchar(128) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `tool`
+--
+
+INSERT INTO `tool` (`id`, `img_name`, `msv`) VALUES
+(1, 'file_0', '20A10010394_org'),
+(2, 'file_1', '20A100_org_1'),
+(3, 'file_1_bright', '20A_brigh'),
+(4, 'file_1_flip', '20A1_flip'),
+(5, 'file_1_noise', '24Anoise'),
+(6, 'file_1_rotate', '24Arotate'),
+(7, 'file_1_translate', '24translatr'),
+(8, 'file_1_zoom', '24zoom');
 
 -- --------------------------------------------------------
 
@@ -113,11 +161,21 @@ CREATE TABLE `user` (
 --
 
 INSERT INTO `user` (`id`, `username`, `password`, `email`, `phone`, `createdate`, `last_login`, `role_id`) VALUES
-(1, 'user', '$2y$10$uK3U.RcWI1m5Zv6HZh1vcOHww6CPqvOeu7LSfNiLqUIpfgspr61A6', 'emait123@gmail.com', '0123456', '2024-08-04 13:50:12', '2024-08-11 15:22:30', 2);
+(1, 'user', '$2y$10$uK3U.RcWI1m5Zv6HZh1vcOHww6CPqvOeu7LSfNiLqUIpfgspr61A6', 'emait123@gmail.com', '0123456', '2024-08-04 13:50:12', '2024-08-27 14:44:52', 2),
+(2, 'admin', '$2y$10$dKbUqy7aakcmDXf3VzX8ROYxO605Wg7ecChgUbpBiPf2hym1x7MDK', 'tetra.dragon197@gmail.com', '0123456', '2024-08-25 08:46:54', '2024-08-25 09:19:24', 1),
+(3, 'ledieuthuy', '$2y$10$DC.p3obB96Ssv5ivwxxBWedJB3JjMpsTvLZrs2YYrotBnYdfEUgIq', NULL, NULL, '2024-08-25 10:00:30', '2024-08-25 10:08:14', NULL),
+(4, 'truongtientung', '$2y$10$QOWZ.HzhJqSJuarr/6NLQuH.1I7gw7ux4V.ZWFmZKINyJxLsj8Hk2', NULL, NULL, '2024-08-25 10:01:13', '2024-08-25 10:08:02', NULL),
+(5, 'truongtiendat', '$2y$10$5pNJ8CoXXjFMwFpiaXYHCu.zoGRbh8wPpGtHZ87ZpL6FRPITtpQZe', NULL, NULL, '2024-08-25 10:07:08', '2024-08-25 10:08:21', NULL);
 
 --
 -- Indexes for dumped tables
 --
+
+--
+-- Indexes for table `chat_history`
+--
+ALTER TABLE `chat_history`
+  ADD PRIMARY KEY (`id`);
 
 --
 -- Indexes for table `employee`
@@ -141,6 +199,12 @@ ALTER TABLE `timeoff`
   ADD KEY `approved_by` (`approved_by`);
 
 --
+-- Indexes for table `tool`
+--
+ALTER TABLE `tool`
+  ADD PRIMARY KEY (`id`);
+
+--
 -- Indexes for table `user`
 --
 ALTER TABLE `user`
@@ -152,10 +216,16 @@ ALTER TABLE `user`
 --
 
 --
+-- AUTO_INCREMENT for table `chat_history`
+--
+ALTER TABLE `chat_history`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `employee`
 --
 ALTER TABLE `employee`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT for table `role`
@@ -167,13 +237,19 @@ ALTER TABLE `role`
 -- AUTO_INCREMENT for table `timeoff`
 --
 ALTER TABLE `timeoff`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+
+--
+-- AUTO_INCREMENT for table `tool`
+--
+ALTER TABLE `tool`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `user`
 --
 ALTER TABLE `user`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- Constraints for dumped tables
