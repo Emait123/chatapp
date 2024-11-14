@@ -69,8 +69,8 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                    <button type="submit" class="btn btn-primary" name="action" value="save" form="form-employee">Thêm</button>
-                    <button type="submit" class="btn btn-info" name="action" value="edit" form="form-employee">Sửa đổi</button>
+                    <button type="submit" class="btn btn-primary" name="action" value="save" form="form-employee" id="btn-save">Thêm</button>
+                    <button type="submit" class="btn btn-info" name="action" value="edit" form="form-employee" id="btn-edit" style="display: none;">Sửa đổi</button>
                 </div>
             </div>
         </div>
@@ -147,6 +147,8 @@
                         document.getElementById('username').value = info.username;
                         document.getElementById('displayname').value = info.name;
                         document.getElementById('telegram-id').value = info.telegram_id;
+                        document.getElementById('btn-edit').style.display = 'block';
+                        document.getElementById('btn-save').style.display = 'none';
                     } else {
                         alert('Có lỗi khi xóa yêu cầu.');
                     }
@@ -163,6 +165,8 @@
 
     document.getElementById('exampleModal').addEventListener('hidden.bs.modal', () => {
         document.getElementById('form-employee').reset();
+        document.getElementById('btn-edit').style.display = 'none';
+        document.getElementById('btn-save').style.display = 'block';
     });
 </script>
 <?= $this->endSection('content') ?>

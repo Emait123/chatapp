@@ -41,6 +41,12 @@ class Employee extends BaseController
                 $userModel->insertEmployee($employeeData);
                 return redirect()->route('Employee::index');
                 break;
+            case 'edit':
+                $data['username'] = $post['username'];
+                if (isset($post['password']) && $post['password'] != '') {
+                    $data['password'] = $post['password'];
+                }
+                $userModel->update($data);
             case 'delete':
                 $userID = $post['id'];
                 $userModel->set('deleted', 1)->where('id', $userID)->update();

@@ -48,7 +48,7 @@
                     <th>Ngày xin</th>
                     <th>Ngày bắt đầu</th>
                     <th>Ngày kết thúc</th>
-                    <th>Số ngày phép</th>
+                    <th>Số ngày nghỉ</th>
                     <th>Lý do nghỉ</th>
                 </tr>
                 <?php foreach($timeoffList as $k => $timeoff): ?>

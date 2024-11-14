@@ -23,8 +23,8 @@ class UserModel extends Model
     }
 
     public function getEmployeeList() {
-        $list = $this->select('user.id, user.username, employee.name, employee.telegram_id')
-            ->join('employee', 'user.id = employee.user_id', 'left')
+        $list = $this->select('user.id as user_id, employee.id as employee_id, user.username, employee.name, employee.telegram_id')
+            ->join('employee', 'user.id = employee.user_id', 'right')
             ->where('deleted', 0)
             ->findAll();
         return $list;
