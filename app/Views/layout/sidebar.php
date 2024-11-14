@@ -23,8 +23,8 @@
         <?php endif; ?>
         <?php if($user['role_id'] == '1'): ?>
             <li>
-                <a href="<?= url_to('timeofflist') ?>" class="nav-link <?= ($active == 'approve') ? 'active' : 'link-dark' ?>">
-                    <i class="fa-solid fa-calendar-days"></i>Duyệt nghỉ phép
+                <a href="<?= url_to('Employee::timeoffList') ?>" class="nav-link <?= ($active == 'approve') ? 'active' : 'link-dark' ?>">
+                    <i class="fa-solid fa-calendar-days"></i>Thông tin nghỉ phép
                 </a>
             </li>
             <li>
@@ -54,5 +54,6 @@
     #sidebar {
         position:fixed;
         max-width: 20%;
+        height: 100vh;
     }
 </style>

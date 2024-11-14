@@ -41,6 +41,39 @@ class Employee extends BaseController
                 $userModel->insertEmployee($employeeData);
                 return redirect()->route('Employee::index');
                 break;
+            case 'delete':
+                $userID = $post['id'];
+                $userModel->set('deleted', 1)->where('id', $userID)->update();
+                return $this->response->setJSON(['result' => true ]);
+                break;
+            case 'getInfo':
+                $userID = $post['id'];
+                $employee = $userModel->getEmployee_userID($userID);
+                return $this->response->setJSON([ 'result' => true, 'info' => $employee ]);
+                break;
         }
+    }
+
+    public function timeoffList() {
+        $user = $this->session->get('user');
+        if (!isset($user)) {
+            return redirect()->route('Login::index');
+        }
+        $user['role_name'] = 'Admin';
+
+        $get = $this->request->getGet();
+        $filter = [
+            'month' => (isset($get['month'])) ? $get['month'] : 'all',
+            'year' => (isset($get['year'])) ? $get['year'] : 'all',
+        ];
+
+        $timeoffModel = model('TimeoffModel');
+        $data = [
+            'user'  => $user,
+            'active' => 'list',
+            'years' => $timeoffModel->getYearList(),
+            'timeoffList' => $timeoffModel->getTimeOffList($filter),
+        ];
+        return view('employee_timeoff_list', $data);
     }
 }

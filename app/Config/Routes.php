@@ -15,6 +15,7 @@ $routes->post('/home/api', 'Home::fetch');
 
 $routes->get('employeelist', 'Employee::index', ['as' => 'employeelist']);
 $routes->post('employeelist', 'Employee::process');
+$routes->get('employee-timeoff', 'Employee::timeoffList');
 
 $routes->get('/deletedata', 'DeleteData::index');
 $routes->get('/tos', 'DeleteData::index');

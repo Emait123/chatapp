@@ -8,7 +8,7 @@ class UserModel extends Model
 {
     protected $table = 'user';
     protected $primaryKey = 'id';
-    protected $allowedFields = ['username', 'password', 'email', 'phone', 'createdate', 'last_login', 'role_id'];
+    protected $allowedFields = ['username', 'password', 'email', 'phone', 'createdate', 'last_login', 'role_id', 'deleted'];
 
     protected $beforeInsert = ['hashPassword'];
     protected $beforeUpdate = ['hashPassword'];
@@ -25,6 +25,7 @@ class UserModel extends Model
     public function getEmployeeList() {
         $list = $this->select('user.id, user.username, employee.name, employee.telegram_id')
             ->join('employee', 'user.id = employee.user_id', 'left')
+            ->where('deleted', 0)
             ->findAll();
         return $list;
     }
@@ -88,6 +89,15 @@ class UserModel extends Model
             'month_koluong' => $month_koluong,
             'remain' => $remain,
         ];
+    }
+
+    public function getEmployee_userID($userID) {
+        $builder = $this->db->table('employee');
+        $query = $builder->select('user.id, user.username, employee.name, employee.telegram_id')
+            ->join('user', 'employee.user_id = user.id')
+            ->where('user.id', $userID);
+        $result = $query->get()->getRowArray();
+        return $result;
     }
 
     public function getUserByUsername($username)
