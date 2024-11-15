@@ -35,6 +35,11 @@ class UserModel extends Model
         return $builder->insert($data);
     }
 
+    public function updateEmployee($id, $data) {
+        $builder = $this->db->table('employee');
+        return $builder->where('id', $id)->update($data);
+    }
+
     public function getEmployeeInfo($telegram_id) {
         $builder = $this->db->table('employee');
         $query = $builder->select('employee.id, employee.name, employee.telegram_id')

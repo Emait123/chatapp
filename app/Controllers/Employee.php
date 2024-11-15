@@ -42,18 +42,28 @@ class Employee extends BaseController
                 return redirect()->route('Employee::index');
                 break;
             case 'edit':
-                $data['username'] = $post['username'];
+                $userID = $post['user-id'];
+                $employeeID = $post['employee-id'];
+
+                $userData['username'] = $post['username'];
                 if (isset($post['password']) && $post['password'] != '') {
-                    $data['password'] = $post['password'];
+                    $userData['password'] = $post['password'];
                 }
-                $userModel->update($data);
+                $employeeData = [
+                    'telegram_id' => $post['telegram_id'],
+                    'name' => $post['name'],
+                ];
+                $userModel->update($userID, $userData);
+                $userModel->updateEmployee($employeeID, $employeeData);
+                return redirect()->route('Employee::index');
+                break;
             case 'delete':
                 $userID = $post['id'];
                 $userModel->set('deleted', 1)->where('id', $userID)->update();
                 return $this->response->setJSON(['result' => true ]);
                 break;
             case 'getInfo':
-                $userID = $post['id'];
+                $userID = $post['userID'];
                 $employee = $userModel->getEmployee_userID($userID);
                 return $this->response->setJSON([ 'result' => true, 'info' => $employee ]);
                 break;

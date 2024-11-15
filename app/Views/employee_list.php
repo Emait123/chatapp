@@ -33,8 +33,8 @@
                         <td><?= $employee['name'] ?></td>
                         <td><?= isset($employee['telegram_id']) ? $employee['telegram_id'] : '' ?></td>
                         <td>
-                            <button type="button" class="btn btn-danger btn-delete" title="Xóa" data-id="<?= $employee['id'] ?>" ><i class="fa-solid fa-trash"></i></button>
-                            <button type="button" class="btn btn-info btn-edit" title="Sửa" data-id="<?= $employee['id'] ?>" data-bs-toggle="modal" data-bs-target="#exampleModal"><i class="fa-solid fa-wrench"></i></button>
+                            <button type="button" class="btn btn-danger btn-delete" title="Xóa" data-employeeid="<?= $employee['employee_id'] ?>" data-userid="<?= $employee['user_id'] ?>" ><i class="fa-solid fa-trash"></i></button>
+                            <button type="button" class="btn btn-info btn-edit" title="Sửa" data-userid="<?= $employee['user_id'] ?>" data-employeeid="<?= $employee['employee_id'] ?>" data-bs-toggle="modal" data-bs-target="#exampleModal"><i class="fa-solid fa-wrench"></i></button>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -52,7 +52,9 @@
                 </div>
                 <div class="modal-body">
                     <form action="" method="post" id='form-employee'>
+                        <input type="hidden" name="user-id" value="" id="user-id">
                         <input type="hidden" name="employee-id" value="" id="employee-id">
+
                         <label class="form-label mb-3">Tên đăng nhập
                             <input type="text" class="form-control" name="username" id="username">
                         </label>
@@ -121,10 +123,16 @@
 
     document.querySelectorAll('.btn-edit').forEach( (el) => {
         el.addEventListener('click', () => {
-            let id = el.dataset.id
+            let userID = el.dataset.userid;
+            let employeeID = el.dataset.employeeid;
+
+            document.getElementById('user-id').value = userID;
+            document.getElementById('employee-id').value = employeeID;
+
             let formData = new FormData();
             formData.append('action', 'getInfo');
-            formData.append('id', id);
+            formData.append('userID', userID);
+            formData.append('employeeID', employeeID);
 
             //Gửi request đến server để lấy thông tin
             fetch('<?= url_to('Employee::process') ?>', {
