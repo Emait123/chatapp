@@ -23,7 +23,7 @@ class UserModel extends Model
     }
 
     public function getEmployeeList() {
-        $list = $this->select('user.id as user_id, employee.id as employee_id, user.username, employee.name, employee.gender, employee.class_name, employee.telegram_id')
+        $list = $this->select("user.id as user_id, employee.id as employee_id, user.username, employee.name, DATE_FORMAT(employee.birth, '%d/%m/%Y') as birth, employee.gender, employee.class_name, employee.telegram_id")
             ->join('employee', 'user.id = employee.user_id', 'right')
             ->where('deleted', 0)
             ->findAll();
@@ -146,7 +146,7 @@ class UserModel extends Model
 
     public function getEmployee_userID($userID) {
         $builder = $this->db->table('employee');
-        $query = $builder->select('user.id, user.username, employee.name, employee.telegram_id')
+        $query = $builder->select("user.id, user.username, employee.name, employee.telegram_id, employee.gender, employee.class_name, employee.birth")
             ->join('user', 'employee.user_id = user.id')
             ->where('user.id', $userID);
         $result = $query->get()->getRowArray();

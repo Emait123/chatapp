@@ -2,10 +2,10 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Host: localhost:3306
--- Generation Time: Nov 15, 2024 at 08:16 PM
--- Server version: 10.6.20-MariaDB
--- PHP Version: 8.3.13
+-- Máy chủ: localhost:3306
+-- Thời gian đã tạo: Th10 15, 2024 lúc 09:19 PM
+-- Phiên bản máy phục vụ: 10.6.20-MariaDB
+-- Phiên bản PHP: 8.3.13
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,13 +18,13 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `emaitcli_chatapp`
+-- Cơ sở dữ liệu: `emaitcli_chatapp`
 --
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `chat_history`
+-- Cấu trúc bảng cho bảng `chat_history`
 --
 
 CREATE TABLE `chat_history` (
@@ -37,7 +37,7 @@ CREATE TABLE `chat_history` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `chat_history`
+-- Đang đổ dữ liệu cho bảng `chat_history`
 --
 
 INSERT INTO `chat_history` (`id`, `tel_user_id`, `add_date`, `message`, `type`, `deleted`) VALUES
@@ -166,7 +166,7 @@ INSERT INTO `chat_history` (`id`, `tel_user_id`, `add_date`, `message`, `type`, 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `employee`
+-- Cấu trúc bảng cho bảng `employee`
 --
 
 CREATE TABLE `employee` (
@@ -180,19 +180,29 @@ CREATE TABLE `employee` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `employee`
+-- Đang đổ dữ liệu cho bảng `employee`
 --
 
 INSERT INTO `employee` (`id`, `user_id`, `name`, `birth`, `gender`, `class_name`, `telegram_id`) VALUES
-(1, 1, 'Nhân viên 1', '1997-03-24', 1, '', ''),
-(2, 3, 'Lê Diệu Thúy', NULL, NULL, '', '5304040462'),
-(3, 4, 'Trương Tiến Tùng', NULL, NULL, '', '5580139045'),
-(4, 5, 'Trương Tiến Đạt', '1997-03-24', NULL, '', '7050621296');
+(1, 1, 'Nhân viên 1', '1997-03-24', 1, 'test', ''),
+(2, 3, 'Lê Diệu Thúy', NULL, 0, 'Nhân sự', '5304040462'),
+(3, 4, 'Trương Tiến Tùng', '1962-02-18', 1, 'Nhân sự', '5580139045'),
+(4, 5, 'Trương Tiến Đạt', '1997-03-24', 1, 'Nhân sự', '7050621296'),
+(5, 6, 'Nguyễn Thị Ngọc Hoa', '1982-06-09', 0, 'Kỹ thuật', ''),
+(6, 7, 'Nguyễn Thị Mai', '1986-01-14', 0, 'CSKH', ''),
+(7, 8, 'Nguyễn Văn Tú', '1986-04-06', 1, 'CSKH', ''),
+(8, 9, 'Nguyễn Thùy Minh', '1987-10-06', 0, 'CSKH', ''),
+(9, 10, 'Hoàng Trường Minh', '1988-12-14', 1, 'CSKH', ''),
+(10, 11, 'Nguyễn Thị Hồng Nhung', '1983-02-03', 0, 'Hành chính', ''),
+(11, 12, 'Trần Thị Anh Thư', '1997-01-02', 0, 'Hành chính', ''),
+(12, 13, 'Vũ Duy Việt', '1982-12-29', 1, 'Kỹ thuật', ''),
+(13, 14, 'Lã Mạnh Hà', '1987-05-04', 1, 'Marketing', ''),
+(14, 15, 'Nguyễn Thị Minh Nguyệt', '1982-06-21', 0, 'Phó Giám đốc - PT HC', '');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `role`
+-- Cấu trúc bảng cho bảng `role`
 --
 
 CREATE TABLE `role` (
@@ -201,7 +211,7 @@ CREATE TABLE `role` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `role`
+-- Đang đổ dữ liệu cho bảng `role`
 --
 
 INSERT INTO `role` (`id`, `name`) VALUES
@@ -211,7 +221,7 @@ INSERT INTO `role` (`id`, `name`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `timeoff`
+-- Cấu trúc bảng cho bảng `timeoff`
 --
 
 CREATE TABLE `timeoff` (
@@ -230,7 +240,7 @@ CREATE TABLE `timeoff` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `timeoff`
+-- Đang đổ dữ liệu cho bảng `timeoff`
 --
 
 INSERT INTO `timeoff` (`id`, `employee_id`, `request_date`, `start_date`, `end_date`, `duration`, `reason`, `type`, `approved`, `approved_by`, `approved_date`, `deleted`) VALUES
@@ -252,7 +262,7 @@ INSERT INTO `timeoff` (`id`, `employee_id`, `request_date`, `start_date`, `end_d
 -- --------------------------------------------------------
 
 --
--- Table structure for table `tool`
+-- Cấu trúc bảng cho bảng `tool`
 --
 
 CREATE TABLE `tool` (
@@ -262,7 +272,7 @@ CREATE TABLE `tool` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `tool`
+-- Đang đổ dữ liệu cho bảng `tool`
 --
 
 INSERT INTO `tool` (`id`, `img_name`, `msv`) VALUES
@@ -278,7 +288,7 @@ INSERT INTO `tool` (`id`, `img_name`, `msv`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `user`
+-- Cấu trúc bảng cho bảng `user`
 --
 
 CREATE TABLE `user` (
@@ -294,41 +304,51 @@ CREATE TABLE `user` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `user`
+-- Đang đổ dữ liệu cho bảng `user`
 --
 
 INSERT INTO `user` (`id`, `username`, `password`, `email`, `phone`, `createdate`, `last_login`, `role_id`, `deleted`) VALUES
 (1, 'user', '$2y$10$uK3U.RcWI1m5Zv6HZh1vcOHww6CPqvOeu7LSfNiLqUIpfgspr61A6', 'emait123@gmail.com', '0123456', '2024-08-04 13:50:12', '2024-11-14 12:46:17', 2, 0),
-(2, 'admin', '$2y$10$dKbUqy7aakcmDXf3VzX8ROYxO605Wg7ecChgUbpBiPf2hym1x7MDK', 'tetra.dragon197@gmail.com', '0123456', '2024-08-25 08:46:54', '2024-11-15 08:43:56', 1, 0),
+(2, 'admin', '$2y$10$dKbUqy7aakcmDXf3VzX8ROYxO605Wg7ecChgUbpBiPf2hym1x7MDK', 'tetra.dragon197@gmail.com', '0123456', '2024-08-25 08:46:54', '2024-11-15 13:34:04', 1, 0),
 (3, 'ledieuthuy', '$2y$10$DC.p3obB96Ssv5ivwxxBWedJB3JjMpsTvLZrs2YYrotBnYdfEUgIq', NULL, NULL, '2024-08-25 10:00:30', '2024-11-14 03:10:00', 2, 0),
-(4, 'truongtientung', '$2y$10$QOWZ.HzhJqSJuarr/6NLQuH.1I7gw7ux4V.ZWFmZKINyJxLsj8Hk2', NULL, NULL, '2024-08-25 10:01:13', '2024-08-25 10:08:02', 2, 0),
-(5, 'truongtiendat', '$2y$10$5pNJ8CoXXjFMwFpiaXYHCu.zoGRbh8wPpGtHZ87ZpL6FRPITtpQZe', NULL, NULL, '2024-08-25 10:07:08', '2024-10-04 09:08:07', 2, 0);
+(4, 'truongtientung', '$2y$10$DBNp8fJDwJndKlvY9c0vIO/xyKNArXziO4efRGhAXYL4b1hB7VvHC', NULL, NULL, '2024-08-25 10:01:13', '2024-08-25 10:08:02', 2, 0),
+(5, 'truongtiendat', '$2y$10$5pNJ8CoXXjFMwFpiaXYHCu.zoGRbh8wPpGtHZ87ZpL6FRPITtpQZe', NULL, NULL, '2024-08-25 10:07:08', '2024-10-04 09:08:07', 2, 0),
+(6, 'ngochoa', '$2y$10$mUTcLg4jFqTj.HmROUtMneTu25s5WheV6/F14mztcJZ3ZQoEwd7ca', NULL, NULL, '2024-11-15 13:56:20', NULL, 2, 0),
+(7, 'thimai', '$2y$10$15EHhoFdoXFAT6f9.eYkXuG9hkRh/kbavwqRQ8Cr3R2yRqbCHhWYm', NULL, NULL, '2024-11-15 14:10:06', NULL, 2, 0),
+(8, 'vantu', '$2y$10$8JjOAntCFwmzut4cCAoJV.GB48fRDIORzsP.fLqXToVXptA98v0Jq', NULL, NULL, '2024-11-15 14:11:35', NULL, 2, 0),
+(9, 'thuyminh', '$2y$10$281pdRxKIdTlupvp/VAIQOjf3jPyNH253/QIj69pYW3wmxIJNB.qi', NULL, NULL, '2024-11-15 14:12:15', NULL, 2, 0),
+(10, 'truongminh', '$2y$10$vofiP.cvoJQQViZqRl5DGOXai0ecYBgqS5fxXn6cJjMjmDZ2DX75u', NULL, NULL, '2024-11-15 14:12:51', NULL, 2, 0),
+(11, 'hongnhung', '$2y$10$ZuuqAOipzYvWU7w7Ck2iQOXlHkc/4Kd7yBqU5ii9cn/pWUpzL33La', NULL, NULL, '2024-11-15 14:13:21', NULL, 2, 0),
+(12, 'anhthu', '$2y$10$8TJ..Wr9rjrUk7x8aWHcDeqiz81fYmkpYPPB6/DMqouyhq52CrcZ.', NULL, NULL, '2024-11-15 14:13:50', NULL, 2, 0),
+(13, 'duyviet', '$2y$10$SeA1qggsl2JPss847.GfDubplf9R9QxIqMM0leSH05iv7MuxkoxDy', NULL, NULL, '2024-11-15 14:14:20', NULL, 2, 0),
+(14, 'manhha', '$2y$10$emUVTvjqysg1X3wXixb4Qe3KftoxiW3flL36Pnf.1GhBsyQ2GW6KW', NULL, NULL, '2024-11-15 14:15:10', NULL, 2, 0),
+(15, 'minhnguyet', '$2y$10$BCWIOLmwEFBJ8rkv.bqIKeznYvdVIUjHwR5wEuOGbENIuakcSrzla', NULL, NULL, '2024-11-15 14:16:40', NULL, 2, 0);
 
 --
--- Indexes for dumped tables
+-- Chỉ mục cho các bảng đã đổ
 --
 
 --
--- Indexes for table `chat_history`
+-- Chỉ mục cho bảng `chat_history`
 --
 ALTER TABLE `chat_history`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `employee`
+-- Chỉ mục cho bảng `employee`
 --
 ALTER TABLE `employee`
   ADD PRIMARY KEY (`id`),
   ADD KEY `user_id` (`user_id`);
 
 --
--- Indexes for table `role`
+-- Chỉ mục cho bảng `role`
 --
 ALTER TABLE `role`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `timeoff`
+-- Chỉ mục cho bảng `timeoff`
 --
 ALTER TABLE `timeoff`
   ADD PRIMARY KEY (`id`),
@@ -336,77 +356,77 @@ ALTER TABLE `timeoff`
   ADD KEY `approved_by` (`approved_by`);
 
 --
--- Indexes for table `tool`
+-- Chỉ mục cho bảng `tool`
 --
 ALTER TABLE `tool`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `user`
+-- Chỉ mục cho bảng `user`
 --
 ALTER TABLE `user`
   ADD PRIMARY KEY (`id`),
   ADD KEY `role_id` (`role_id`);
 
 --
--- AUTO_INCREMENT for dumped tables
+-- AUTO_INCREMENT cho các bảng đã đổ
 --
 
 --
--- AUTO_INCREMENT for table `chat_history`
+-- AUTO_INCREMENT cho bảng `chat_history`
 --
 ALTER TABLE `chat_history`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=146;
 
 --
--- AUTO_INCREMENT for table `employee`
+-- AUTO_INCREMENT cho bảng `employee`
 --
 ALTER TABLE `employee`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
--- AUTO_INCREMENT for table `role`
+-- AUTO_INCREMENT cho bảng `role`
 --
 ALTER TABLE `role`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
--- AUTO_INCREMENT for table `timeoff`
+-- AUTO_INCREMENT cho bảng `timeoff`
 --
 ALTER TABLE `timeoff`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
--- AUTO_INCREMENT for table `tool`
+-- AUTO_INCREMENT cho bảng `tool`
 --
 ALTER TABLE `tool`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
--- AUTO_INCREMENT for table `user`
+-- AUTO_INCREMENT cho bảng `user`
 --
 ALTER TABLE `user`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
--- Constraints for dumped tables
+-- Các ràng buộc cho các bảng đã đổ
 --
 
 --
--- Constraints for table `employee`
+-- Các ràng buộc cho bảng `employee`
 --
 ALTER TABLE `employee`
   ADD CONSTRAINT `employee_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`);
 
 --
--- Constraints for table `timeoff`
+-- Các ràng buộc cho bảng `timeoff`
 --
 ALTER TABLE `timeoff`
   ADD CONSTRAINT `timeoff_ibfk_1` FOREIGN KEY (`employee_id`) REFERENCES `employee` (`id`),
   ADD CONSTRAINT `timeoff_ibfk_2` FOREIGN KEY (`approved_by`) REFERENCES `user` (`id`);
 
 --
--- Constraints for table `user`
+-- Các ràng buộc cho bảng `user`
 --
 ALTER TABLE `user`
   ADD CONSTRAINT `user_ibfk_1` FOREIGN KEY (`role_id`) REFERENCES `role` (`id`);

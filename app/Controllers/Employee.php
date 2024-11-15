@@ -53,6 +53,9 @@ class Employee extends BaseController
                 $employeeData = [
                     'user_id' => $userID,
                     'name' => $post['name'],
+                    'gender' => $post['gioitinh'],
+                    'birth' => date('Y-m-d', strtotime($post['birth'])),
+                    'class_name' => $post['class-name'],
                     'telegram_id' => $post['telegram_id'],
                 ];
                 $userModel->insertEmployee($employeeData);
@@ -69,6 +72,9 @@ class Employee extends BaseController
                 $employeeData = [
                     'telegram_id' => $post['telegram_id'],
                     'name' => $post['name'],
+                    'gender' => $post['gioitinh'],
+                    'birth' => date('Y-m-d', strtotime($post['birth'])),
+                    'class_name' => $post['class-name'],
                 ];
                 $userModel->update($userID, $userData);
                 $userModel->updateEmployee($employeeID, $employeeData);

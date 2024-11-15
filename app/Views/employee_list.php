@@ -46,6 +46,9 @@
                     <th rowspan="2">#</th>
                     <th rowspan="2">Tên đăng nhập</th>
                     <th rowspan="2">Tên nhân viên</th>
+                    <th rowspan="2">Ngày sinh</th>
+                    <th rowspan="2">Giới tính</th>
+                    <th rowspan="2">Vị trí</th>
                     <th rowspan="2">ID Telegram</th>
                     <th colspan="3" class="text-center">Thời gian nghỉ</th>
                     <th rowspan="2">Tác vụ</th>
@@ -60,6 +63,9 @@
                         <td><?= $k+1 ?></td>
                         <td><?= $employee['username'] ?></td>
                         <td><?= $employee['name'] ?></td>
+                        <td><?= $employee['birth'] ?></td>
+                        <td><?= $employee['gender'] == 0 ? 'Nữ' : 'Nam' ?></td>
+                        <td><?= $employee['class_name'] ?></td>
                         <td><?= isset($employee['telegram_id']) ? $employee['telegram_id'] : '' ?></td>
                         <td><?= $employee['timeoffDetail']['month_chedo'] ?></td>
                         <td><?= $employee['timeoffDetail']['month_coluong'] ?></td>
@@ -93,8 +99,22 @@
                         <label class="form-label mb-3">Mật khẩu
                             <input type="password" class="form-control" name="password" id="password">
                         </label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="gioitinh" id="gioitinh-nam" value="1">
+                            <label class="form-label">Nam</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="gioitinh" id="gioitinh-nu" value="0">
+                            <label class="form-label">Nữ</label>
+                        </div>
                         <label class="form-label mb-3">Tên nhân viên
                             <input type="text" class="form-control" name="name" id="displayname">
+                        </label>
+                        <label class="form-label mb-3">Vị trí
+                            <input type="text" class="form-control" name="class-name" id="class-name">
+                        </label>
+                        <label class="form-label mb-3">Ngày sinh
+                            <input type="date" class="form-control" name="birth" id="birth">
                         </label>
                         <label class="form-label mb-3">ID Telegram
                             <input type="text" class="form-control" name="telegram_id" id="telegram-id">
@@ -187,6 +207,13 @@
                         document.getElementById('username').value = info.username;
                         document.getElementById('displayname').value = info.name;
                         document.getElementById('telegram-id').value = info.telegram_id;
+                        document.getElementById('class-name').value = info.class_name;
+                        document.getElementById('birth').value = info.birth;
+                        if (info.gender == 1) {
+                            document.getElementById('gioitinh-nam').checked = true;
+                        } else {
+                            document.getElementById('gioitinh-nu').checked = true;
+                        }
                         document.getElementById('btn-edit').style.display = 'block';
                         document.getElementById('btn-save').style.display = 'none';
                     } else {
