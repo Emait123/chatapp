@@ -9,7 +9,30 @@
     <div class="row">
         <div class="col-12">
             <h1>Danh sách nhân viên</h1>
-            
+            <form method="get">
+                <div>
+                    <label class="form-label">
+                        Chọn tháng
+                        <select class="form-select" name="month">
+                            <!-- <option value="all">Tất cả</option> -->
+                        <?php foreach (range(1, 12) as $month): ?>
+                            <option value="<?= $month ?>" <?= ($month == $curMonth) ? "selected" : '' ?> ><?= $month ?></option>
+                        <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <label class="form-label">
+                        Chọn năm
+                        <select class="form-select" name="year">
+                            <!-- <option value="all">Tất cả</option> -->
+                        <?php foreach ($years as $year): ?>
+                            <option value="<?= $year['year'] ?>" <?= ($year == $curYear) ? "selected" : '' ?> ><?= $year['year'] ?></option>
+                        <?php endforeach; ?>
+                        </select>
+                    </label>
+                    <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+                </div>
+            </form>
+
             <!-- Button trigger modal -->
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
                 Thêm nhân viên
@@ -20,11 +43,17 @@
         <div class="col-12">
             <table class="table w-100">
                 <tr>
-                    <th>#</th>
-                    <th>Tên đăng nhập</th>
-                    <th>Tên nhân viên</th>
-                    <th>ID Telegram</th>
-                    <th>Tác vụ</th>
+                    <th rowspan="2">#</th>
+                    <th rowspan="2">Tên đăng nhập</th>
+                    <th rowspan="2">Tên nhân viên</th>
+                    <th rowspan="2">ID Telegram</th>
+                    <th colspan="3" class="text-center">Thời gian nghỉ</th>
+                    <th rowspan="2">Tác vụ</th>
+                </tr>
+                <tr>
+                    <th>Nghỉ chế độ</th>
+                    <th>Nghỉ có lương</th>
+                    <th>Nghỉ không lương</th>
                 </tr>
                 <?php foreach($employeeList as $k => $employee): ?>
                     <tr>
@@ -32,6 +61,9 @@
                         <td><?= $employee['username'] ?></td>
                         <td><?= $employee['name'] ?></td>
                         <td><?= isset($employee['telegram_id']) ? $employee['telegram_id'] : '' ?></td>
+                        <td><?= $employee['timeoffDetail']['month_chedo'] ?></td>
+                        <td><?= $employee['timeoffDetail']['month_coluong'] ?></td>
+                        <td><?= $employee['timeoffDetail']['month_koluong'] ?></td>
                         <td>
                             <button type="button" class="btn btn-danger btn-delete" title="Xóa" data-employeeid="<?= $employee['employee_id'] ?>" data-userid="<?= $employee['user_id'] ?>" ><i class="fa-solid fa-trash"></i></button>
                             <button type="button" class="btn btn-info btn-edit" title="Sửa" data-userid="<?= $employee['user_id'] ?>" data-employeeid="<?= $employee['employee_id'] ?>" data-bs-toggle="modal" data-bs-target="#exampleModal"><i class="fa-solid fa-wrench"></i></button>

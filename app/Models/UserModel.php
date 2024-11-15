@@ -23,7 +23,7 @@ class UserModel extends Model
     }
 
     public function getEmployeeList() {
-        $list = $this->select('user.id as user_id, employee.id as employee_id, user.username, employee.name, employee.telegram_id')
+        $list = $this->select('user.id as user_id, employee.id as employee_id, user.username, employee.name, employee.gender, employee.class_name, employee.telegram_id')
             ->join('employee', 'user.id = employee.user_id', 'right')
             ->where('deleted', 0)
             ->findAll();
@@ -46,6 +46,54 @@ class UserModel extends Model
             ->where('telegram_id', $telegram_id);
         $result = $query->get()->getRowArray();
         return $result;
+    }
+
+    public function getEmployeeTimeOff_ByTime($employeeID, $filter) {
+        $builder = $this->db->table('employee');
+        $builder->select()
+            ->join('timeoff', 'employee.id = timeoff.employee_id', 'left')
+            ->where('employee.id', $employeeID);
+        if ($filter['year'] != 'all') {
+            $builder->where('YEAR(start_date)', $filter['year']);
+        }
+        $result = $builder->get()->getResultArray();
+
+        $month_count = 0;
+        $month_duration = 0;
+        $month_chedo = 0;
+        $month_coluong = 0;
+        $month_koluong = 0;
+        $total_duration = 0;
+        $phep_duration = 0;
+        foreach ($result as $timeoff) {
+            $month = date('m', strtotime($timeoff['start_date']));
+            if ($month == $filter['month']) {
+                $month_count++;
+                $month_duration += $timeoff['duration'];
+                if ($timeoff['type'] == 'chedo') {
+                    $month_chedo += $timeoff['duration'];
+                } elseif ($timeoff['type'] == 'luong') {
+                    $month_coluong += $timeoff['duration'];
+                } else {
+                    $month_koluong += $timeoff['duration'];
+                }
+            }
+            if ($timeoff['type'] == 'luong') {
+                $phep_duration += $timeoff['duration'];
+            }
+            $total_duration += $timeoff['duration'];
+        }
+        $remain = $phep_duration > 12 ? 0 : 12-$phep_duration;
+
+        return [
+            'total' => $total_duration,
+            'month_count' => $month_count,
+            'month_duration' => $month_duration,
+            'month_chedo' => $month_chedo,
+            'month_coluong' => $month_coluong,
+            'month_koluong' => $month_koluong,
+            'remain' => $remain,
+        ];
     }
 
     public function getEmployeeTimeOff($telegram_id) {

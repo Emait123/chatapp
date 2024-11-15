@@ -16,7 +16,7 @@ class TimeoffList extends BaseController
         $data = [
             'user'  => $user,
             'active' => 'list',
-            'timeoffList' => $timeoffModel->where('employee_id', $user['id'])->where('deleted', 0)->findAll()
+            'timeoffList' => $timeoffModel->getEmployeeTimeoff($user['id'])
         ];
         return view('timeoff', $data);
     }

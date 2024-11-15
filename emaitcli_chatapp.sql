@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Nov 14, 2024 at 06:16 PM
+-- Generation Time: Nov 15, 2024 at 08:16 PM
 -- Server version: 10.6.20-MariaDB
 -- PHP Version: 8.3.13
 
@@ -157,7 +157,11 @@ INSERT INTO `chat_history` (`id`, `tel_user_id`, `add_date`, `message`, `type`, 
 (138, 5580139045, '2024-09-19 00:01:54', 'Thông tin nghỉ phép;\nBắt đầu: 19/09/2024 08:00;\nKết thúc: 19/09/2024 17:00;\nLý do: ;\nVì chưa có lý do nghỉ nên yêu cầu sẽ bị tính là nghỉ không lương. Các thông tin này đã đúng chưa?', 'assistant', 0),
 (139, 5580139045, '2024-09-21 00:28:37', 'Mai cho Anh nghỉ', 'user', 0),
 (140, 5580139045, '2024-09-21 00:28:39', 'Thông tin nghỉ;\nBắt đầu: 22/09/2024 08:00;\nKết thúc: 22/09/2024 17:00;\nLý do: ;\nVì chưa có lý do nghỉ nên yêu cầu sẽ bị tính là nghỉ không lương. Các thông tin này đã đúng chưa?', 'assistant', 0),
-(141, 5304040462, '2024-11-13 06:54:16', 'xin chào', 'user', 1);
+(141, 5304040462, '2024-11-13 06:54:16', 'xin chào', 'user', 1),
+(142, 5304040462, '2024-11-14 12:06:17', 'tôi xin nghỉ phép', 'user', 0),
+(143, 5304040462, '2024-11-14 12:06:36', 'ngày mai vì tôi bị ốm', 'user', 0),
+(144, 5304040462, '2024-11-14 12:06:41', 'Thông tin nghỉ;\nBắt đầu: 15/11/2024 08:00;\nKết thúc: 15/11/2024 17:00;\nLý do: bị ốm;\nCác thông tin này đã đúng chưa?', 'assistant', 0),
+(145, 5304040462, '2024-11-14 12:42:06', 'Xin chào', 'user', 0);
 
 -- --------------------------------------------------------
 
@@ -171,6 +175,7 @@ CREATE TABLE `employee` (
   `name` varchar(255) DEFAULT NULL,
   `birth` date DEFAULT NULL,
   `gender` tinyint(4) DEFAULT NULL,
+  `class_name` varchar(64) NOT NULL,
   `telegram_id` varchar(128) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -178,11 +183,11 @@ CREATE TABLE `employee` (
 -- Dumping data for table `employee`
 --
 
-INSERT INTO `employee` (`id`, `user_id`, `name`, `birth`, `gender`, `telegram_id`) VALUES
-(1, 1, 'Nhân viên 1', '1997-03-24', 1, ''),
-(2, 3, 'Lê Diệu Thúy', NULL, NULL, '5304040462'),
-(3, 4, 'Trương Tiến Tùng', NULL, NULL, '5580139045'),
-(4, 5, 'Trương Tiến Đạt', NULL, NULL, '7050621296');
+INSERT INTO `employee` (`id`, `user_id`, `name`, `birth`, `gender`, `class_name`, `telegram_id`) VALUES
+(1, 1, 'Nhân viên 1', '1997-03-24', 1, '', ''),
+(2, 3, 'Lê Diệu Thúy', NULL, NULL, '', '5304040462'),
+(3, 4, 'Trương Tiến Tùng', NULL, NULL, '', '5580139045'),
+(4, 5, 'Trương Tiến Đạt', '1997-03-24', NULL, '', '7050621296');
 
 -- --------------------------------------------------------
 
@@ -241,7 +246,8 @@ INSERT INTO `timeoff` (`id`, `employee_id`, `request_date`, `start_date`, `end_d
 (10, 2, '2024-08-27 03:53:55', '2024-08-28 08:00:00', '2024-08-28 17:00:00', 1, 'nghỉ thai sản', 'chedo', 0, NULL, '2024-08-27 10:53:56', 0),
 (11, 2, '2024-08-27 04:00:08', '2024-08-29 08:00:00', '2024-08-29 17:00:00', 1, 'đi du lịch', 'luong', 0, NULL, '2024-08-27 11:00:09', 0),
 (12, 1, '2024-09-05 10:48:19', '2024-09-09 00:00:00', NULL, NULL, 'ốm', '', 0, NULL, '2024-09-05 10:48:19', 0),
-(13, 1, '2024-09-05 11:27:28', '2024-09-15 00:00:00', '2024-09-15 23:59:59', NULL, 'du lịch', '', 0, NULL, '2024-09-05 11:27:28', 0);
+(13, 1, '2024-09-05 11:27:28', '2024-09-15 00:00:00', '2024-09-15 23:59:59', NULL, 'du lịch', '', 0, NULL, '2024-09-05 11:27:28', 0),
+(14, 2, '2024-11-14 12:07:01', '2024-11-15 08:00:00', '2024-11-15 17:00:00', 1, 'bị ốm', 'chedo', 0, NULL, '2024-11-14 19:07:13', 0);
 
 -- --------------------------------------------------------
 
@@ -292,8 +298,8 @@ CREATE TABLE `user` (
 --
 
 INSERT INTO `user` (`id`, `username`, `password`, `email`, `phone`, `createdate`, `last_login`, `role_id`, `deleted`) VALUES
-(1, 'user', '$2y$10$uK3U.RcWI1m5Zv6HZh1vcOHww6CPqvOeu7LSfNiLqUIpfgspr61A6', 'emait123@gmail.com', '0123456', '2024-08-04 13:50:12', '2024-11-14 08:11:22', 2, 0),
-(2, 'admin', '$2y$10$dKbUqy7aakcmDXf3VzX8ROYxO605Wg7ecChgUbpBiPf2hym1x7MDK', 'tetra.dragon197@gmail.com', '0123456', '2024-08-25 08:46:54', '2024-11-14 08:11:29', 1, 0),
+(1, 'user', '$2y$10$uK3U.RcWI1m5Zv6HZh1vcOHww6CPqvOeu7LSfNiLqUIpfgspr61A6', 'emait123@gmail.com', '0123456', '2024-08-04 13:50:12', '2024-11-14 12:46:17', 2, 0),
+(2, 'admin', '$2y$10$dKbUqy7aakcmDXf3VzX8ROYxO605Wg7ecChgUbpBiPf2hym1x7MDK', 'tetra.dragon197@gmail.com', '0123456', '2024-08-25 08:46:54', '2024-11-15 08:43:56', 1, 0),
 (3, 'ledieuthuy', '$2y$10$DC.p3obB96Ssv5ivwxxBWedJB3JjMpsTvLZrs2YYrotBnYdfEUgIq', NULL, NULL, '2024-08-25 10:00:30', '2024-11-14 03:10:00', 2, 0),
 (4, 'truongtientung', '$2y$10$QOWZ.HzhJqSJuarr/6NLQuH.1I7gw7ux4V.ZWFmZKINyJxLsj8Hk2', NULL, NULL, '2024-08-25 10:01:13', '2024-08-25 10:08:02', 2, 0),
 (5, 'truongtiendat', '$2y$10$5pNJ8CoXXjFMwFpiaXYHCu.zoGRbh8wPpGtHZ87ZpL6FRPITtpQZe', NULL, NULL, '2024-08-25 10:07:08', '2024-10-04 09:08:07', 2, 0);
@@ -350,7 +356,7 @@ ALTER TABLE `user`
 -- AUTO_INCREMENT for table `chat_history`
 --
 ALTER TABLE `chat_history`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=142;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=146;
 
 --
 -- AUTO_INCREMENT for table `employee`
@@ -368,7 +374,7 @@ ALTER TABLE `role`
 -- AUTO_INCREMENT for table `timeoff`
 --
 ALTER TABLE `timeoff`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `tool`

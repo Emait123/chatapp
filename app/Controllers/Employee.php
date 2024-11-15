@@ -10,12 +10,29 @@ class Employee extends BaseController
         if (!isset($user)) {
             return redirect()->route('Login::index');
         }
+
+        $get = $this->request->getGet();
+        $filter = [
+            'month' => (isset($get['month'])) ? $get['month'] : date("m"),
+            'year' => (isset($get['year'])) ? $get['year'] : 'all',
+        ];
+
         $user['role_name'] = 'Admin';
         $userModel = new UserModel();
+        $timeoffModel = model('TimeoffModel');
+        $employeeList = $userModel->getEmployeeList();
+        foreach ($employeeList as $k => $v) {
+            $timeOffDetail = $userModel->getEmployeeTimeOff_ByTime($v['employee_id'], $filter);
+            $v['timeoffDetail'] = $timeOffDetail;
+            $employeeList[$k] = $v;
+        }
         $data = [
             'user'  => $user,
             'active' => 'employee',
-            'employeeList' => $userModel->getEmployeeList()
+            'years' => $timeoffModel->getYearList(),
+            'employeeList' => $employeeList,
+            'curMonth' => date("m"),
+            'curYear' => date("Y"),
         ];
         return view('employee_list', $data);
     }
