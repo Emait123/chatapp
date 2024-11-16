@@ -30,6 +30,12 @@ class UserModel extends Model
         return $list;
     }
 
+    public function findEmployee($userID) {
+        $builder = $this->db->table('employee');
+        $builder->select()->where('user_id', $userID);
+        return $builder->get()->getRowArray();
+    }
+
     public function insertEmployee($data) {
         $builder = $this->db->table('employee');
         return $builder->insert($data);

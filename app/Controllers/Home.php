@@ -90,10 +90,32 @@ class Home extends BaseController
         );
     
         $data = [
-            'employee_id' => $user['id'],
+            'employee_id' => $user['employeeID'],
             'start_date' => $timeoff['date'],
             'reason'    => $timeoff['reason'],
         ];
+
+        if ($api_response['result'] == 'tool') {
+            $type = $api_response['param']['timeoff_type'];
+            if ($type == 'chedo') {
+                //Nghỉ chế độ, không tính vào số ngày phép
+                $data['type'] = 'chedo';
+            } elseif (in_array($type, ['denmuon', 'nghiphep', 'congtac', 'nghibu'])) {
+                $data['type'] = 'luong';
+                //Nghỉ có lương nếu còn ngày phép, không lương nếu hết ngày
+                // $timeOffInfo = $userModel->getEmployeeTimeOff($telegram_user_id);
+                // if ($timeOffInfo['remain'] > $workdays) {
+                // } else {
+                //     $data['type'] = 'koluong';
+                // }
+            } else {
+                //Các trường hợp còn lại đều không lương
+                $data['type'] = 'koluong';
+            }
+        } else {
+            $data['type'] = 'koluong';
+        }
+
         if ($timeoff['enddate'] != '') {
             $data['end_date'] = $timeoff['enddate'];
         }

@@ -29,8 +29,10 @@ class Login extends BaseController
         }
         if ($user && password_verify($password, $user['password'])) {
             $userModel->where('id', $user['id'])->set('last_login', date('Y-m-d H:i:s'))->update();
+            $employeeInfo = $userModel->findEmployee($user['id']);
             $userInfo = [
                 'id' => $user['id'],
+                'employeeID' => isset($employeeInfo) ? $employeeInfo['id'] : 1,
                 'username' => $user['username'],
                 'email'    => $user['email'],
                 'phone'     => $user['phone'],
